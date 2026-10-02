@@ -1,0 +1,6 @@
+# Ignore heavy PDF books and extracted page images
+*.pdf
+pages/
+g2_pages/
+g3_pages/
+*.ps1
