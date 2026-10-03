@@ -2265,8 +2265,8 @@
                         </div>
                     </div>
                     
-                    <div style="min-width: 260px;">
-                        <label class="scope-label" style="margin-bottom: 6px;">2. اختر الفصل المعروض حالياً:</label>
+                    <div style="min-width: 280px;">
+                        <label class="scope-label" style="margin-bottom: 6px;">2. اختر الفصل المعروض حالياً (جميع فصول أول، ثاني، ثالث):</label>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <select id="stClassSelector" class="select-input" style="flex: 1; font-weight: 800;" onchange="onStudentTabClassChange()">
                                 <!-- Injected -->
@@ -5582,28 +5582,43 @@
                 };
             }
 
-            // 2. تحديث قائمة فصول تبويب الطلاب (Students Tab) بناء على المرحلة المختارة
+            // 2. تحديث قائمة فصول تبويب الطلاب (Students Tab) - إظهار جميع الفصول لجميع المراحل (أول وثاني وثالث متوسط)
             const stSelector = document.getElementById('stClassSelector');
             if (stSelector) {
                 stSelector.innerHTML = '';
-                let tabClasses = appState.classes.filter(c => (c.grade || 1) === studentTabGrade);
-                if (tabClasses.length === 0) {
-                    const defName = studentTabGrade === 3 ? "الصف ثالث / 1" : (studentTabGrade === 2 ? "الصف ثاني / 1" : "الصف أول / 1");
-                    const newClass = { id: Date.now(), grade: studentTabGrade, name: defName, students: [] };
-                    appState.classes.push(newClass);
-                    saveClassesToStorage();
-                    tabClasses = [newClass];
-                }
 
-                tabClasses.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = c.name;
-                    stSelector.appendChild(opt);
+                // ضمان وجود فصول افتراضية لجميع المراحل الثلاث
+                [1, 2, 3].forEach(g => {
+                    if (!appState.classes.some(c => (c.grade || 1) === g)) {
+                        const defName = g === 3 ? "الصف ثالث / 1" : (g === 2 ? "الصف ثاني / 1" : "الصف أول / 1");
+                        appState.classes.push({ id: Date.now() + g, grade: g, name: defName, students: [] });
+                        saveClassesToStorage();
+                    }
                 });
 
-                if (!tabClasses.some(c => c.id === appState.activeClassId)) {
-                    appState.activeClassId = tabClasses[0].id;
+                const gradesConfig = [
+                    { grade: 1, label: 'الصف الأول متوسط', icon: '🔹' },
+                    { grade: 2, label: 'الصف الثاني متوسط', icon: '🔹' },
+                    { grade: 3, label: 'الصف الثالث متوسط', icon: '🔹' }
+                ];
+
+                gradesConfig.forEach(g => {
+                    const gClasses = appState.classes.filter(c => (c.grade || 1) === g.grade);
+                    if (gClasses.length > 0) {
+                        const optGroup = document.createElement('optgroup');
+                        optGroup.label = `--- ${g.label} ---`;
+                        gClasses.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.textContent = `${c.name} (${g.label})`;
+                            optGroup.appendChild(opt);
+                        });
+                        stSelector.appendChild(optGroup);
+                    }
+                });
+
+                if (!appState.classes.some(c => c.id === appState.activeClassId)) {
+                    appState.activeClassId = appState.classes[0] ? appState.classes[0].id : 1;
                 }
                 stSelector.value = appState.activeClassId;
             }
@@ -5613,6 +5628,16 @@
             const selector = document.getElementById('stClassSelector');
             if (selector) {
                 appState.activeClassId = parseInt(selector.value);
+                const currentClass = appState.classes.find(c => c.id === appState.activeClassId);
+                if (currentClass) {
+                    studentTabGrade = currentClass.grade || 1;
+                    const btn1 = document.getElementById('stGradeBtn1');
+                    const btn2 = document.getElementById('stGradeBtn2');
+                    const btn3 = document.getElementById('stGradeBtn3');
+                    if (btn1) btn1.classList.toggle('active', studentTabGrade === 1);
+                    if (btn2) btn2.classList.toggle('active', studentTabGrade === 2);
+                    if (btn3) btn3.classList.toggle('active', studentTabGrade === 3);
+                }
                 renderStudentsView();
                 playSound('click');
             }
