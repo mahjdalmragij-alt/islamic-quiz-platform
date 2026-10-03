@@ -1726,6 +1726,180 @@
         .student-chip-delete:hover {
             color: #ef4444;
         }
+
+        /* Teams Configuration Modal Styles */
+        .teams-count-selector {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .btn-team-count {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-team-count:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+        .btn-team-count.active {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .team-config-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            padding: 9px 12px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        .team-config-row:focus-within {
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        .team-config-color-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 13px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .team-config-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+        .team-config-input:focus {
+            border-color: #2563eb;
+            background: #ffffff;
+        }
+        .btn-suggest-dice {
+            background: #f1f5f9;
+            border: 1.5px solid #cbd5e1;
+            border-radius: var(--radius-md);
+            padding: 7px 11px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .btn-suggest-dice:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+        .preset-theme-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .btn-theme-pill {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-theme-pill:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .suggested-chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 125px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: var(--radius-md);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+        .suggested-name-chip {
+            padding: 4px 10px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .suggested-name-chip:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+            transform: scale(1.05);
+        }
+        .btn-setup-teams-badge {
+            margin-top: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(37, 99, 235, 0.1);
+            color: #1d4ed8;
+            border: 1.5px solid rgba(37, 99, 235, 0.3);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .btn-setup-teams-badge:hover {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -1841,6 +2015,9 @@
                         <div class="mode-card-icon teams"><i class="fa-solid fa-trophy"></i></div>
                         <div class="mode-card-title">مسابقة الفرق والمجموعات</div>
                         <div class="mode-card-desc">تقسيم الفصل لمجموعات متنافسة مع لوحة نقاط حية وتدوير الأدوار وإعلان الفائز.</div>
+                        <button type="button" class="btn-setup-teams-badge" onclick="event.stopPropagation(); openTeamsConfigModal();" title="تحديد وتسمية الفرق">
+                            <i class="fa-solid fa-users-gear"></i> ضبط وتسمية الفرق (<span id="launcherTeamsCountBadge">4 فرق</span>)
+                        </button>
                     </div>
 
                     <div class="mode-select-card" id="lModeDuel" onclick="selectLauncherMode('duel')">
@@ -2199,11 +2376,17 @@
 
             <!-- لوحة نقاط الفرق (تظهر في نمط الفرق) -->
             <div id="teamsScoreSection">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
-                    <h3 style="font-size: 17px; font-weight: 800; color: var(--primary-dark);">
-                        <i class="fa-solid fa-shield-halved"></i> لوحة نقاط الفرق المتنافسة
-                    </h3>
-                    <div style="display: flex; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 style="font-size: 17px; font-weight: 800; color: var(--primary-dark); margin: 0;">
+                            <i class="fa-solid fa-shield-halved"></i> لوحة نقاط الفرق المتنافسة
+                        </h3>
+                        <span id="teamsActiveCountBadge" style="background: #eff6ff; color: #2563eb; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">4 فرق</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn-primary" style="padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: none;" onclick="openTeamsConfigModal()">
+                            <i class="fa-solid fa-users-gear"></i> تحديد وتسمية الفرق
+                        </button>
                         <button class="btn-outline" style="padding: 6px 12px; font-size: 12px;" onclick="resetTeamScores()">
                             <i class="fa-solid fa-rotate-left"></i> تصفير النقاط
                         </button>
@@ -2719,6 +2902,121 @@
                 </div>
                 <button class="btn-outline" style="padding: 10px; font-size: 13px;" onclick="closeCloudModal()">
                     إغلاق النافذة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تخصيص وتسمية الفرق المتنافسة (Teams Config Modal) -->
+    <div class="modal-overlay" id="teamsConfigModal" style="display: none;">
+        <div class="modal-card" style="max-width: 650px; text-align: right;">
+            <button class="modal-close-btn" onclick="closeTeamsConfigModal()"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 6px 16px rgba(37,99,235,0.3); flex-shrink: 0;">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 900; color: var(--primary-dark); margin: 0;">
+                        تحديد وتسمية الفرق المتنافسة
+                    </h2>
+                    <p style="color: var(--text-muted); font-size: 12px; font-weight: 600; margin: 2px 0 0 0;">
+                        حدد عدد الفرق المتبارية (من فريقين حتى 6 فرق) وخصص أسماءها أو اختر من الباقات المقترحة.
+                    </p>
+                </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 14px 0 16px 0;">
+
+            <!-- 1. اختيار عدد الفرق -->
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 800; color: #334155; margin-bottom: 8px;">
+                    <i class="fa-solid fa-arrow-down-1-9" style="color: #2563eb;"></i> 1. اختر عدد الفرق المشاركة:
+                </label>
+                <div class="teams-count-selector" id="teamsCountSelector">
+                    <button type="button" class="btn-team-count" data-count="2" onclick="setTeamsConfigCount(2)">
+                        <i class="fa-solid fa-user-group"></i> فريقان (2)
+                    </button>
+                    <button type="button" class="btn-team-count" data-count="3" onclick="setTeamsConfigCount(3)">
+                        <i class="fa-solid fa-users"></i> 3 فرق
+                    </button>
+                    <button type="button" class="btn-team-count active" data-count="4" onclick="setTeamsConfigCount(4)">
+                        <i class="fa-solid fa-users"></i> 4 فرق
+                    </button>
+                    <button type="button" class="btn-team-count" data-count="5" onclick="setTeamsConfigCount(5)">
+                        <i class="fa-solid fa-users-rays"></i> 5 فرق
+                    </button>
+                    <button type="button" class="btn-team-count" data-count="6" onclick="setTeamsConfigCount(6)">
+                        <i class="fa-solid fa-users-rays"></i> 6 فرق
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. باقات الأسماء الجاهزة السريعة -->
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 800; color: #334155;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #d97706;"></i> 2. باقات أسماء مقترحة جاهزة (تطبيق فوري):
+                    </label>
+                    <button type="button" class="btn-outline" style="padding: 4px 10px; font-size: 11px; border-radius: 8px;" onclick="randomizeAllTeamsNames()">
+                        <i class="fa-solid fa-dice" style="color: #7c3aed;"></i> اقتراح عشوائي كامل
+                    </button>
+                </div>
+                <div class="preset-theme-pills">
+                    <button type="button" class="btn-theme-pill" onclick="applyTeamThematicPreset('islamic_sciences')">
+                        <i class="fa-solid fa-book-quran" style="color: #047857;"></i> باقة العلوم الشرعية
+                    </button>
+                    <button type="button" class="btn-theme-pill" onclick="applyTeamThematicPreset('heroic_history')">
+                        <i class="fa-solid fa-shield-halved" style="color: #2563eb;"></i> باقة البطولات والقدوات
+                    </button>
+                    <button type="button" class="btn-theme-pill" onclick="applyTeamThematicPreset('wisdom_light')">
+                        <i class="fa-solid fa-sun" style="color: #d97706;"></i> باقة النور والحكمة
+                    </button>
+                    <button type="button" class="btn-theme-pill" onclick="applyTeamThematicPreset('excellence_school')">
+                        <i class="fa-solid fa-award" style="color: #e11d48;"></i> باقة التميز والعفج
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. قائمة الفرق وإدخال الأسماء -->
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 800; color: #334155; margin-bottom: 8px;">
+                    <i class="fa-solid fa-pen-to-square" style="color: #047857;"></i> 3. تخصيص أسماء الفرق:
+                    <span style="font-size: 11px; font-weight: 600; color: #64748b;">(أو انقر على أي اسم مقترح بالأسفل لاختياره مباشرة)</span>
+                </label>
+                <div id="teamsConfigRowsContainer">
+                    <!-- Dynamic Rows injected via JS -->
+                </div>
+            </div>
+
+            <!-- 4. بنك الأسماء المقترحة بالنقر -->
+            <div style="margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 12px; font-weight: 800; color: #475569;">
+                        <i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i> بنك الأسماء المقترحة (انقر لاختيار الاسم):
+                    </label>
+                    <span style="font-size: 11px; font-weight: 700; color: #2563eb;" id="activeTeamInputNotice">الفريق المحدد: الفريق 1</span>
+                </div>
+                <div class="suggested-chips-container" id="suggestedChipsContainer">
+                    <!-- Chips injected dynamically -->
+                </div>
+            </div>
+
+            <!-- خيار تصفير أو الحفاظ على النقاط -->
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;">
+                <label style="font-size: 12px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="teamsResetScoresCheckbox" style="width: 16px; height: 16px; accent-color: #2563eb;">
+                    تصفير نقاط الفرق وبدء جولة جديدة بعد الحفظ
+                </label>
+            </div>
+
+            <!-- أزرار الحفظ والإلغاء -->
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-primary" style="flex: 2; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #047857 0%, #065f46 100%); border: none;" onclick="saveAndApplyTeamsConfig()">
+                    <i class="fa-solid fa-check-double"></i> اعتماد وحفظ الفرق ومزامنتها
+                </button>
+                <button type="button" class="btn-outline" style="flex: 1; padding: 12px; font-size: 13px;" onclick="closeTeamsConfigModal()">
+                    إلغاء
                 </button>
             </div>
         </div>
@@ -5128,10 +5426,72 @@
         }
 
         /* -------------------------------------------------------------------------
-           8. لوحة نقاط الفرق
+           8. لوحة نقاط الفرق وتخصيص وتسمية المجموعات
         ------------------------------------------------------------------------- */
+        const DEFAULT_TEAM_PALETTE = [
+            { id: 1, color: "#047857", bg: "#ecfdf5", border: "#10b981", defaultName: "فرسان التوحيد" },
+            { id: 2, color: "#2563eb", bg: "#eff6ff", border: "#3b82f6", defaultName: "أبطال الفقه" },
+            { id: 3, color: "#d97706", bg: "#fffbeb", border: "#f59e0b", defaultName: "رواة الحديث" },
+            { id: 4, color: "#7c3aed", bg: "#f5f3ff", border: "#8b5cf6", defaultName: "حفظة التفسير" },
+            { id: 5, color: "#e11d48", bg: "#fff1f2", border: "#f43f5e", defaultName: "نجوم السيرة" },
+            { id: 6, color: "#0891b2", bg: "#ecfeff", border: "#06b6d4", defaultName: "دروع العقيدة" }
+        ];
+
+        const TEAM_PRESET_PACKS = {
+            islamic_sciences: {
+                name: "باقة العلوم الشرعية",
+                names: ["فرسان التوحيد", "أبطال الفقه", "رواة الحديث", "حفظة التفسير", "نجوم السيرة", "دروع العقيدة"]
+            },
+            heroic_history: {
+                name: "باقة البطولات والقدوات",
+                names: ["فرسان بدر", "أبطال اليرموك", "ليوث القادسية", "قادة الفتح", "أصحاب الهمم", "فتيان الصدق"]
+            },
+            wisdom_light: {
+                name: "باقة النور والحكمة",
+                names: ["منارات الهدى", "مشاعل النور", "ينابيع الحكمة", "رواد الإحسان", "سفراء الخير", "أهل العزيمة"]
+            },
+            excellence_school: {
+                name: "باقة التميز والعفج",
+                names: ["نجباء العفج", "علماء المستقبل", "جيل القرآن", "صقور المجد", "رواد التفوق", "دروع المعرفة"]
+            }
+        };
+
+        const ALL_SUGGESTED_TEAM_NAMES = [
+            // العلوم الشرعية
+            "فرسان التوحيد", "أبطال الفقه", "رواة الحديث", "حفظة التفسير", "نجوم السيرة", "دروع العقيدة", "أئمة الهدى", "سفراء الدعوة",
+            // البطولات والقدوات
+            "فرسان بدر", "أبطال اليرموك", "ليوث القادسية", "قادة الفتح", "أصحاب الهمم", "فتيان الصدق", "صقور اليرموك", "أبطال حطين",
+            // النور والفضائل
+            "منارات الهدى", "مشاعل النور", "ينابيع الحكمة", "رواد الإحسان", "سفراء الخير", "أهل العزيمة", "نجوم الإيمان", "أصحاب الرسالة",
+            // التميز والمستقبل
+            "نجباء العفج", "علماء المستقبل", "جيل القرآن", "صقور المجد", "رواد التفوق", "دروع المعرفة", "شعلة الذكاء", "فرسان الضاد"
+        ];
+
+        let currentModalTeamCount = 4;
+        let activeFocusedTeamInputIndex = 0;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function updateLauncherTeamsBadge() {
+            const count = (appState.teams && appState.teams.length) ? appState.teams.length : 4;
+            const text = `${count} ${count === 2 ? 'فريقان' : 'فرق'}`;
+            const launcherBadge = document.getElementById('launcherTeamsCountBadge');
+            if (launcherBadge) launcherBadge.textContent = text;
+            const activeBadge = document.getElementById('teamsActiveCountBadge');
+            if (activeBadge) activeBadge.textContent = text;
+        }
+
         function renderTeams() {
             const container = document.getElementById('teamsContainer');
+            if (!container) return;
             container.innerHTML = '';
 
             appState.teams.forEach((t, idx) => {
@@ -5140,9 +5500,10 @@
                 card.className = `team-card ${isTurn ? 'active-turn' : ''}`;
                 card.innerHTML = `
                     <div class="team-card-header">
-                        <div class="team-name" onclick="renameTeam(${idx})" style="cursor: pointer;" title="انقر لتعديل اسم الفريق">
+                        <div class="team-name" onclick="openTeamsConfigModalWithFocus(${idx})" style="cursor: pointer;" title="انقر لتعديل اسم الفريق أو إدارة الفرق">
                             <i class="fa-solid fa-users" style="color: ${t.color};"></i>
-                            <span>${t.name}</span>
+                            <span>${escapeHtml(t.name)}</span>
+                            <i class="fa-solid fa-pen" style="font-size: 11px; color: #94a3b8; margin-right: 5px;"></i>
                         </div>
                         <span class="team-turn-indicator">دوره للإجابة</span>
                     </div>
@@ -5156,6 +5517,7 @@
                 `;
                 container.appendChild(card);
             });
+            updateLauncherTeamsBadge();
         }
 
         function addScore(teamIndex, delta) {
@@ -5173,13 +5535,209 @@
         }
 
         function renameTeam(index) {
-            const current = appState.teams[index].name;
-            const newName = prompt("أدخل اسم الفريق الجديد:", current);
-            if (newName && newName.trim()) {
-                appState.teams[index].name = newName.trim();
-                saveTeamsToStorage();
-                renderTeams();
+            openTeamsConfigModalWithFocus(index);
+        }
+
+        function openTeamsConfigModal() {
+            currentModalTeamCount = (appState.teams && appState.teams.length) ? appState.teams.length : 4;
+            if (currentModalTeamCount < 2) currentModalTeamCount = 2;
+            if (currentModalTeamCount > 6) currentModalTeamCount = 6;
+            
+            renderTeamsCountButtons(currentModalTeamCount);
+            renderTeamsConfigRows(currentModalTeamCount);
+            renderSuggestedNamesChips();
+            setActiveTeamFocus(0);
+            
+            const checkbox = document.getElementById('teamsResetScoresCheckbox');
+            if (checkbox) checkbox.checked = false;
+
+            const modal = document.getElementById('teamsConfigModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                playSound('click');
             }
+        }
+
+        function openTeamsConfigModalWithFocus(idx) {
+            openTeamsConfigModal();
+            if (typeof idx === 'number' && idx >= 0 && idx < currentModalTeamCount) {
+                setActiveTeamFocus(idx);
+                setTimeout(() => {
+                    const input = document.getElementById(`teamConfigInput_${idx}`);
+                    if (input) input.focus();
+                }, 100);
+            }
+        }
+
+        function closeTeamsConfigModal() {
+            const modal = document.getElementById('teamsConfigModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function setTeamsConfigCount(count) {
+            if (count < 2) count = 2;
+            if (count > 6) count = 6;
+            currentModalTeamCount = count;
+            renderTeamsCountButtons(count);
+            renderTeamsConfigRows(count);
+            if (activeFocusedTeamInputIndex >= count) {
+                setActiveTeamFocus(count - 1);
+            }
+            playSound('click');
+        }
+
+        function renderTeamsCountButtons(activeCount) {
+            const container = document.getElementById('teamsCountSelector');
+            if (!container) return;
+            const buttons = container.querySelectorAll('.btn-team-count');
+            buttons.forEach(btn => {
+                const count = parseInt(btn.getAttribute('data-count'), 10);
+                btn.classList.toggle('active', count === activeCount);
+            });
+        }
+
+        function renderTeamsConfigRows(count) {
+            const container = document.getElementById('teamsConfigRowsContainer');
+            if (!container) return;
+
+            // جمع الأسماء المكتوبة حالياً في الحقول قبل إعادة البناء
+            const existingValues = [];
+            const currentInputs = container.querySelectorAll('.team-config-input');
+            currentInputs.forEach(inp => existingValues.push(inp.value.trim()));
+
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const pal = DEFAULT_TEAM_PALETTE[i % DEFAULT_TEAM_PALETTE.length];
+                let initialName = existingValues[i];
+                if (!initialName) {
+                    if (appState.teams[i] && appState.teams[i].name) {
+                        initialName = appState.teams[i].name;
+                    } else {
+                        initialName = pal.defaultName;
+                    }
+                }
+
+                const row = document.createElement('div');
+                row.className = 'team-config-row';
+                row.innerHTML = `
+                    <div class="team-config-color-badge" style="background: ${pal.color};">
+                        ${i + 1}
+                    </div>
+                    <input type="text" class="team-config-input" id="teamConfigInput_${i}" 
+                           placeholder="اسم الفريق ${i + 1}"
+                           onfocus="setActiveTeamFocus(${i})" maxlength="35">
+                    <button type="button" class="btn-suggest-dice" onclick="randomizeSingleTeamName(${i})" title="اقتراح اسم عشوائي لهذا الفريق">
+                        <i class="fa-solid fa-dice" style="color: ${pal.color};"></i>
+                        <span>اقتراح</span>
+                    </button>
+                `;
+                container.appendChild(row);
+                const inputElem = row.querySelector('.team-config-input');
+                if (inputElem) inputElem.value = initialName;
+            }
+        }
+
+        function setActiveTeamFocus(idx) {
+            activeFocusedTeamInputIndex = idx;
+            const notice = document.getElementById('activeTeamInputNotice');
+            if (notice) {
+                notice.textContent = `الفريق المحدد للتسمية: الفريق ${idx + 1}`;
+            }
+        }
+
+        function renderSuggestedNamesChips() {
+            const container = document.getElementById('suggestedChipsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            ALL_SUGGESTED_TEAM_NAMES.forEach(name => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'suggested-name-chip';
+                chip.textContent = name;
+                chip.onclick = () => selectSuggestedNameForActiveTeam(name);
+                container.appendChild(chip);
+            });
+        }
+
+        function selectSuggestedNameForActiveTeam(name) {
+            const input = document.getElementById(`teamConfigInput_${activeFocusedTeamInputIndex}`);
+            if (input) {
+                input.value = name;
+                playSound('click');
+                // الانتقال التلقائي للفريق التالي لتسمية سريعة وسلسة
+                if (activeFocusedTeamInputIndex + 1 < currentModalTeamCount) {
+                    setActiveTeamFocus(activeFocusedTeamInputIndex + 1);
+                    const nextInput = document.getElementById(`teamConfigInput_${activeFocusedTeamInputIndex}`);
+                    if (nextInput) nextInput.focus();
+                }
+            }
+        }
+
+        function applyTeamThematicPreset(presetKey) {
+            const preset = TEAM_PRESET_PACKS[presetKey];
+            if (!preset) return;
+            const inputs = document.querySelectorAll('.team-config-input');
+            inputs.forEach((inp, idx) => {
+                if (preset.names[idx]) {
+                    inp.value = preset.names[idx];
+                }
+            });
+            playSound('click');
+            showNotificationToast(`تم تطبيق "${preset.name}" بنجاح! 🎯`);
+        }
+
+        function randomizeAllTeamsNames() {
+            const inputs = document.querySelectorAll('.team-config-input');
+            const shuffled = [...ALL_SUGGESTED_TEAM_NAMES].sort(() => 0.5 - Math.random());
+            inputs.forEach((inp, idx) => {
+                if (shuffled[idx]) {
+                    inp.value = shuffled[idx];
+                }
+            });
+            playSound('click');
+            showNotificationToast('تم اختيار أسماء عشوائية منوعة لجميع الفرق! 🎲');
+        }
+
+        function randomizeSingleTeamName(idx) {
+            const input = document.getElementById(`teamConfigInput_${idx}`);
+            if (!input) return;
+            const currentNames = Array.from(document.querySelectorAll('.team-config-input')).map(inp => inp.value.trim());
+            const available = ALL_SUGGESTED_TEAM_NAMES.filter(name => !currentNames.includes(name));
+            const pool = available.length > 0 ? available : ALL_SUGGESTED_TEAM_NAMES;
+            const randomName = pool[Math.floor(Math.random() * pool.length)];
+            input.value = randomName;
+            playSound('click');
+        }
+
+        function saveAndApplyTeamsConfig() {
+            const inputs = document.querySelectorAll('.team-config-input');
+            if (inputs.length === 0) return;
+
+            const resetScores = document.getElementById('teamsResetScoresCheckbox') ? document.getElementById('teamsResetScoresCheckbox').checked : false;
+
+            const newTeams = [];
+            inputs.forEach((inp, idx) => {
+                const pal = DEFAULT_TEAM_PALETTE[idx % DEFAULT_TEAM_PALETTE.length];
+                const trimmed = inp.value.trim() || pal.defaultName;
+                const existingScore = (appState.teams[idx] && !resetScores) ? appState.teams[idx].score : 0;
+                newTeams.push({
+                    id: idx + 1,
+                    name: trimmed,
+                    score: existingScore,
+                    color: pal.color
+                });
+            });
+
+            appState.teams = newTeams;
+            if (appState.currentTurnTeamIndex >= appState.teams.length) {
+                appState.currentTurnTeamIndex = 0;
+            }
+
+            saveTeamsToStorage();
+            renderTeams();
+            closeTeamsConfigModal();
+            playSound('fanfare');
+            showNotificationToast(`تم حفظ وتحديث ${appState.teams.length} فرق ومزامنتها بنجاح! 🏆`);
         }
 
         function resetTeamScores() {
@@ -5460,6 +6018,7 @@
 
         function saveTeamsToStorage() {
             localStorage.setItem('islamic_quiz_teams_v1', JSON.stringify(appState.teams));
+            uploadTeamsToCloud(false);
         }
 
         function updateTotalCounter() {
@@ -6020,6 +6579,26 @@
                     updateCloudStatusUI('offline', 'خطأ في قراءة السحابة');
                 });
 
+                // الاستماع اللحظي لتغييرات الفرق وأسمائها
+                const teamsRef = firebaseDbInstance.ref('school_data/teams');
+                teamsRef.on('value', snapshot => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        if (!isSavingToCloud) {
+                            appState.teams = data;
+                            if (appState.currentTurnTeamIndex >= appState.teams.length) {
+                                appState.currentTurnTeamIndex = 0;
+                            }
+                            localStorage.setItem('islamic_quiz_teams_v1', JSON.stringify(appState.teams));
+                            renderTeams();
+                        }
+                    } else if (!isInitialCloudLoadDone) {
+                        uploadTeamsToCloud(false);
+                    }
+                }, error => {
+                    console.warn('Firebase teams sync read error:', error);
+                });
+
             } catch(e) {
                 console.error('Firebase init failed:', e);
                 updateCloudStatusUI('offline', 'تعذر الاتصال بالسحابة');
@@ -6046,8 +6625,28 @@
                 });
         }
 
+        function uploadTeamsToCloud(showToast = false) {
+            if (!firebaseDbInstance) return;
+            isSavingToCloud = true;
+            updateCloudStatusUI('syncing', 'جاري حفظ الفرق...');
+
+            firebaseDbInstance.ref('school_data/teams').set(appState.teams)
+                .then(() => {
+                    isSavingToCloud = false;
+                    updateCloudStatusUI('online', 'تم الحفظ بالسحابة');
+                    if (showToast) {
+                        showNotificationToast('تم حفظ ونشر بيانات الفرق سحابياً! ☁️');
+                    }
+                })
+                .catch(err => {
+                    isSavingToCloud = false;
+                    console.warn('Cloud teams save error:', err);
+                });
+        }
+
         function forcePushClassesToCloud(showToast = true) {
             uploadClassesToCloud(showToast);
+            uploadTeamsToCloud(false);
         }
 
         function forcePullClassesFromCloud() {
@@ -6073,6 +6672,19 @@
                 alert('فشل سحب البيانات من السحابة.');
                 updateCloudStatusUI('offline', 'غير متصل');
             });
+
+            // سحب أحدث بيانات الفرق أيضاً
+            firebaseDbInstance.ref('school_data/teams').once('value').then(snap => {
+                const teamsData = snap.val();
+                if (teamsData && Array.isArray(teamsData) && teamsData.length > 0) {
+                    appState.teams = teamsData;
+                    if (appState.currentTurnTeamIndex >= appState.teams.length) {
+                        appState.currentTurnTeamIndex = 0;
+                    }
+                    localStorage.setItem('islamic_quiz_teams_v1', JSON.stringify(appState.teams));
+                    renderTeams();
+                }
+            }).catch(() => {});
         }
 
         function openCloudModal() {
