@@ -20,6 +20,10 @@
     <script src="questions_bank_g2.js"></script>
     <script src="questions_bank_g3.js"></script>
 
+    <!-- Google Firebase Realtime Database SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --primary: #047857;
@@ -181,6 +185,38 @@
         .header-icon-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-1px);
+        }
+
+        .cloud-sync-btn {
+            position: relative;
+        }
+
+        .cloud-status-dot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 6px #10b981;
+            transition: all 0.3s;
+        }
+
+        .cloud-status-dot.syncing {
+            background: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
+            animation: pulse-sync 1s infinite alternate;
+        }
+
+        .cloud-status-dot.offline {
+            background: #ef4444;
+            box-shadow: 0 0 6px #ef4444;
+        }
+
+        @keyframes pulse-sync {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            100% { transform: scale(1.3); opacity: 1; }
         }
 
         /* --- Nav Tabs Bar --- */
@@ -1712,6 +1748,12 @@
                 <i class="fa-solid fa-sliders"></i> شاشة البداية وتغيير الدرس
             </button>
 
+            <!-- زر المزامنة السحابية Firebase -->
+            <button class="header-icon-btn cloud-sync-btn" id="cloudSyncBtn" onclick="openCloudModal()" title="المزامنة السحابية (Google Firebase)">
+                <i class="fa-solid fa-cloud" id="cloudIcon"></i>
+                <span class="cloud-status-dot" id="cloudStatusDot" title="السحابة متصلة"></span>
+            </button>
+
             <!-- زر تشغيل/كتم الصوت -->
             <button class="header-icon-btn" id="soundToggleBtn" onclick="toggleSound()" title="تشغيل/كتم الصوت">
                 <i class="fa-solid fa-volume-high" id="soundIcon"></i>
@@ -2192,6 +2234,9 @@
                     <button class="btn-primary" onclick="openAddClassModal()">
                         <i class="fa-solid fa-folder-plus"></i> إضافة فصل جديد
                     </button>
+                    <button class="btn-outline" style="border-color: #38bdf8; color: #0284c7; background: #f0f9ff; font-weight: 800;" onclick="forcePushClassesToCloud()" title="مزامنة فورية مع السحابة">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> حفظ سحابي في كل الأجهزة
+                    </button>
                     <button class="btn-outline" onclick="exportStudentsBackupJSON()">
                         <i class="fa-solid fa-file-export"></i> تصدير نسخة احتياطية (JSON)
                     </button>
@@ -2628,6 +2673,52 @@
                 </button>
                 <button class="btn-outline" style="flex: 1; justify-content: center; font-size: 14px; padding: 12px;" onclick="showLauncherScreen(); closeMillionaireResultModal();">
                     <i class="fa-solid fa-house"></i> الرئيسية
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة المزامنة السحابية Firebase (Cloud Sync Modal) -->
+    <div class="modal-overlay" id="cloudSyncModal" style="display: none;">
+        <div class="modal-card" style="max-width: 520px; text-align: center;">
+            <div style="width: 64px; height: 64px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px;">
+                <i class="fa-solid fa-cloud"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
+                المزامنة السحابية الحية (Google Firebase)
+            </h3>
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 18px;">
+                المنصة مرتبطة مباشرة بقاعدتك السحابية. أي طالب أو فصل تضيفه أو تعدله يُحفظ سحابياً فوراً ويظهر في شاشة المدرسة وهاتفك وحاسوبك تلقائياً دون كتابته مرة أخرى!
+            </p>
+
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 20px; text-align: right; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #64748b; font-weight: 700;">حالة الاتصال:</span>
+                    <span id="cloudModalStatusText" style="font-weight: 800; color: #10b981;">
+                        <i class="fa-solid fa-circle-check"></i> متصل بالسحابة (مزامنة فورية)
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #64748b; font-weight: 700;">المشروع السحابي:</span>
+                    <span style="font-family: monospace; font-weight: 800; color: #0284c7;">islamic-quiz-72b06</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #64748b; font-weight: 700;">آخر مزامنة:</span>
+                    <span id="cloudModalLastSyncTime" style="font-weight: 700; color: #0f172a;">الآن</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" style="flex: 1; padding: 11px; font-size: 13px; background: #0284c7;" onclick="forcePushClassesToCloud(true)">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> رفع البيانات الحالية للسحابة
+                    </button>
+                    <button class="btn-outline" style="flex: 1; padding: 11px; font-size: 13px;" onclick="forcePullClassesFromCloud()">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> سحب أحدث بيانات
+                    </button>
+                </div>
+                <button class="btn-outline" style="padding: 10px; font-size: 13px;" onclick="closeCloudModal()">
+                    إغلاق النافذة
                 </button>
             </div>
         </div>
@@ -5424,6 +5515,7 @@
 
         function saveClassesToStorage() {
             localStorage.setItem('islamic_quiz_classes_v1', JSON.stringify(appState.classes));
+            uploadClassesToCloud(false);
         }
 
         function saveTeamsToStorage() {
@@ -5876,7 +5968,204 @@
             onLauncherSubjectChange();
             renderTeams();
             showLauncherScreen();
+            initCloudSync();
         });
+
+        /* -------------------------------------------------------------------------
+           14. نظام المزامنة السحابية الحية (Google Firebase Realtime Database)
+        ------------------------------------------------------------------------- */
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDEEuxoPu5Ce2Kzd96A-4qhyVADn8m8270",
+            authDomain: "islamic-quiz-72b06.firebaseapp.com",
+            databaseURL: "https://islamic-quiz-72b06-default-rtdb.firebaseio.com",
+            projectId: "islamic-quiz-72b06",
+            storageBucket: "islamic-quiz-72b06.firebasestorage.app",
+            messagingSenderId: "681797978953",
+            appId: "1:681797978953:web:a03e04b44617ebc88ba898",
+            measurementId: "G-42E23SS9TE"
+        };
+
+        let firebaseAppInstance = null;
+        let firebaseDbInstance = null;
+        let isInitialCloudLoadDone = false;
+        let isSavingToCloud = false;
+
+        function updateCloudStatusUI(status, label) {
+            const dot = document.getElementById('cloudStatusDot');
+            const modalStatus = document.getElementById('cloudModalStatusText');
+            const lastSync = document.getElementById('cloudModalLastSyncTime');
+
+            if (dot) {
+                dot.className = 'cloud-status-dot ' + status;
+                dot.title = label || 'السحابة متصلة';
+            }
+            if (modalStatus) {
+                if (status === 'online') {
+                    modalStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> متصل بالسحابة (مزامنة فورية)';
+                    modalStatus.style.color = '#10b981';
+                } else if (status === 'syncing') {
+                    modalStatus.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin" style="color:#f59e0b;"></i> جاري المزامنة...';
+                    modalStatus.style.color = '#f59e0b';
+                } else {
+                    modalStatus.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:#ef4444;"></i> وضع التخزين المحلي (دون إنترنت)';
+                    modalStatus.style.color = '#ef4444';
+                }
+            }
+            if (lastSync) {
+                const now = new Date();
+                lastSync.textContent = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+        }
+
+        function initCloudSync() {
+            if (typeof firebase === 'undefined') {
+                console.warn('Firebase SDK is not available.');
+                updateCloudStatusUI('offline', 'غير متصل (الإنترنت معطل)');
+                return;
+            }
+
+            try {
+                if (!firebase.apps.length) {
+                    firebaseAppInstance = firebase.initializeApp(FIREBASE_CONFIG);
+                } else {
+                    firebaseAppInstance = firebase.app();
+                }
+                firebaseDbInstance = firebase.database();
+                updateCloudStatusUI('syncing', 'جاري الاتصال بالسحابة...');
+
+                // مراقبة حالة الاتصال بالشبكة مع Firebase
+                firebaseDbInstance.ref('.info/connected').on('value', snap => {
+                    if (snap.val() === true) {
+                        updateCloudStatusUI('online', 'متصل بالسحابة (Google Firebase)');
+                    } else {
+                        updateCloudStatusUI('offline', 'وضع التخزين المحلي (غير متصل بالإنترنت)');
+                    }
+                });
+
+                // الاستماع اللحظي لتغييرات الفصول وقوائم الطلاب
+                const classesRef = firebaseDbInstance.ref('school_data/classes');
+                classesRef.on('value', snapshot => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        if (!isSavingToCloud) {
+                            appState.classes = data;
+                            localStorage.setItem('islamic_quiz_classes_v1', JSON.stringify(appState.classes));
+                            populateClassDropdowns();
+                            if (typeof renderStudentsView === 'function') {
+                                renderStudentsView();
+                            }
+                            if (isInitialCloudLoadDone) {
+                                showNotificationToast('تمت مزامنة بيانات الطلاب من السحابة بنجاح! ☁️');
+                            }
+                        }
+                    } else if (!isInitialCloudLoadDone) {
+                        // إذا كانت قاعدة البيانات السحابية فارغة لأول مرة، نرفع البيانات المحلية إليها تلقائياً
+                        forcePushClassesToCloud(false);
+                    }
+                    isInitialCloudLoadDone = true;
+                    updateCloudStatusUI('online', 'متصل بالسحابة');
+                }, error => {
+                    console.warn('Firebase sync read error:', error);
+                    updateCloudStatusUI('offline', 'خطأ في قراءة السحابة');
+                });
+
+            } catch(e) {
+                console.error('Firebase init failed:', e);
+                updateCloudStatusUI('offline', 'تعذر الاتصال بالسحابة');
+            }
+        }
+
+        function uploadClassesToCloud(showToast = false) {
+            if (!firebaseDbInstance) return;
+            isSavingToCloud = true;
+            updateCloudStatusUI('syncing', 'جاري الحفظ بالسحابة...');
+
+            firebaseDbInstance.ref('school_data/classes').set(appState.classes)
+                .then(() => {
+                    isSavingToCloud = false;
+                    updateCloudStatusUI('online', 'تم الحفظ بالسحابة');
+                    if (showToast) {
+                        showNotificationToast('تم حفظ ونشر التغييرات سحابياً في جميع الأجهزة! ☁️');
+                    }
+                })
+                .catch(err => {
+                    isSavingToCloud = false;
+                    console.warn('Cloud save error:', err);
+                    updateCloudStatusUI('offline', 'فشل الحفظ بالسحابة');
+                });
+        }
+
+        function forcePushClassesToCloud(showToast = true) {
+            uploadClassesToCloud(showToast);
+        }
+
+        function forcePullClassesFromCloud() {
+            if (!firebaseDbInstance) {
+                alert('قاعدة البيانات السحابية غير متصلة حالياً.');
+                return;
+            }
+            updateCloudStatusUI('syncing', 'جاري السحب...');
+            firebaseDbInstance.ref('school_data/classes').once('value').then(snapshot => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    appState.classes = data;
+                    localStorage.setItem('islamic_quiz_classes_v1', JSON.stringify(appState.classes));
+                    populateClassDropdowns();
+                    if (typeof renderStudentsView === 'function') renderStudentsView();
+                    updateCloudStatusUI('online', 'متصل');
+                    showNotificationToast('تم سحب أحدث بيانات من السحابة بنجاح! ☁️');
+                } else {
+                    alert('لا توجد بيانات محفوظة في السحابة حتى الآن.');
+                    updateCloudStatusUI('online', 'متصل');
+                }
+            }).catch(e => {
+                alert('فشل سحب البيانات من السحابة.');
+                updateCloudStatusUI('offline', 'غير متصل');
+            });
+        }
+
+        function openCloudModal() {
+            const modal = document.getElementById('cloudSyncModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                playSound('click');
+            }
+        }
+
+        function closeCloudModal() {
+            const modal = document.getElementById('cloudSyncModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function showNotificationToast(msg) {
+            let toast = document.getElementById('cloudToastNotice');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'cloudToastNotice';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '24px';
+                toast.style.left = '24px';
+                toast.style.background = 'linear-gradient(135deg, #064e3b 0%, #047857 100%)';
+                toast.style.color = '#ffffff';
+                toast.style.padding = '12px 20px';
+                toast.style.borderRadius = '12px';
+                toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+                toast.style.border = '1.5px solid #fbbf24';
+                toast.style.fontSize = '13px';
+                toast.style.fontWeight = '800';
+                toast.style.zIndex = '999999';
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.pointerEvents = 'none';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = '<i class="fa-solid fa-cloud-arrow-up" style="color: #fbbf24; margin-left: 8px;"></i> ' + msg;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+            }, 3000);
+        }
     </script>
 </body>
 </html>
