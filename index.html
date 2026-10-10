@@ -2617,13 +2617,14 @@
 
             <!-- إعلان الفائز بالسحب -->
             <div id="pickedStudentBox" style="display: none; margin-top: 20px; padding: 16px; background: #ecfdf5; border: 2px solid #34d399; border-radius: var(--radius-md);">
-                <div style="font-size: 12px; font-weight: 800; color: #065f46;">وقع الاختيار على الفارس:</div>
+                <div style="font-size: 13px; font-weight: 800; color: #065f46;" id="pickedStudentBadge">وقع الاختيار على الفارس:</div>
                 <div id="pickedStudentName" style="font-size: 26px; font-weight: 900; color: var(--primary-dark); margin: 6px 0;">اسم الطالب</div>
+                <div id="pickedStudentNote" style="font-size: 13px; font-weight: 700; color: #047857; margin-bottom: 8px; display: none;"></div>
                 <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
                     <button class="btn-primary" style="font-size: 13px; padding: 8px 16px;" onclick="acceptPickedStudent()">
                         <i class="fa-solid fa-check"></i> جاهز للإجابة
                     </button>
-                    <button class="btn-outline" style="font-size: 13px; padding: 8px 16px;" onclick="spinWheel()">
+                    <button class="btn-outline" id="reSpinBtn" style="font-size: 13px; padding: 8px 16px;" onclick="spinWheel()">
                         <i class="fa-solid fa-rotate-right"></i> تدوير مرة أخرى
                     </button>
                 </div>
@@ -5784,9 +5785,55 @@
 
         function openWheelModal() {
             playSound('click');
-            document.getElementById('wheelModal').style.display = 'flex';
-            document.getElementById('pickedStudentBox').style.display = 'none';
+            const modal = document.getElementById('wheelModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+
+            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            let unpicked = [];
+            if (activeClass && activeClass.students && activeClass.students.length > 0) {
+                unpicked = activeClass.students.filter(s => !s.picked);
+                // إذا شارك جميع الطلاب في الجولة، نبدأ دورة جديدة تلقائياً
+                if (unpicked.length === 0) {
+                    activeClass.students.forEach(s => s.picked = false);
+                    saveClassesToStorage();
+                    renderStudentsView();
+                    unpicked = activeClass.students.slice();
+                }
+            }
+
             drawWheel();
+
+            // إذا بقي طالب واحد فقط: لا يدور العجلة، بل يقع عليه الاختيار مباشرة
+            if (unpicked.length === 1) {
+                announcePickedStudent(unpicked[0].name, true);
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = true;
+                    spinBtn.innerHTML = '<i class="fa-solid fa-crown" style="color: #fbbf24;"></i> وقع الاختيار على الطالب الأخير تلقائياً';
+                }
+                const reSpinBtn = document.getElementById('reSpinBtn');
+                if (reSpinBtn) reSpinBtn.style.display = 'none';
+                const wheelSubtitle = document.getElementById('wheelSubtitle');
+                if (wheelSubtitle) {
+                    wheelSubtitle.innerHTML = '<span style="color: #047857; font-weight: 800;"><i class="fa-solid fa-wand-magic-sparkles"></i> بقي طالب واحد فقط، وقع عليه الاختيار مباشرة دون دوران العجلة!</span>';
+                }
+            } else {
+                // حالة طبيعية (أكثر من طالب متبقي)
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = false;
+                    spinBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> تدوير عجلة الحظ';
+                }
+                const reSpinBtn = document.getElementById('reSpinBtn');
+                if (reSpinBtn) reSpinBtn.style.display = 'inline-flex';
+                const wheelSubtitle = document.getElementById('wheelSubtitle');
+                if (wheelSubtitle) {
+                    const count = unpicked.length;
+                    wheelSubtitle.textContent = count > 0 ? `سحب عشوائي بين ${count} من الفرسان المتبقين في الفصل` : 'سحب عشوائي لاختيار طالب للإجابة عن السؤال';
+                }
+                document.getElementById('pickedStudentBox').style.display = 'none';
+            }
         }
 
         function closeWheelModal() {
@@ -5800,11 +5847,35 @@
             const students = getActiveStudentsList();
             const numSlices = students.length;
             const radius = canvas.width / 2;
-            const arc = (2 * Math.PI) / numSlices;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const colors = ['#047857', '#0284c7', '#d97706', '#7c3aed', '#dc2626', '#059669', '#2563eb', '#ea580c'];
+
+            if (numSlices === 1) {
+                // رسم دائرة واحدة أنيقة ومميزة للطالب الأخير
+                ctx.beginPath();
+                ctx.fillStyle = '#047857';
+                ctx.arc(radius, radius, radius - 4, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 18px Cairo, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(students[0], radius, radius - 15);
+                ctx.font = "bold 13px Cairo, sans-serif";
+                ctx.fillStyle = "#fef08a";
+                ctx.fillText("⭐ الفارس الأخير المتبقي ⭐", radius, radius + 15);
+                ctx.restore();
+                return;
+            }
+
+            const arc = (2 * Math.PI) / numSlices;
 
             for (let i = 0; i < numSlices; i++) {
                 const angle = wheelRotation + i * arc;
@@ -5832,11 +5903,42 @@
 
         function spinWheel() {
             if (isSpinning) return;
+
+            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            let unpicked = [];
+            if (activeClass && activeClass.students && activeClass.students.length > 0) {
+                unpicked = activeClass.students.filter(s => !s.picked);
+                if (unpicked.length === 0) {
+                    activeClass.students.forEach(s => s.picked = false);
+                    saveClassesToStorage();
+                    renderStudentsView();
+                    unpicked = activeClass.students.slice();
+                }
+            }
+
+            // إذا بقي طالب واحد فقط، لا يدور العجلة بل يختاره مباشرة
+            if (unpicked.length === 1) {
+                announcePickedStudent(unpicked[0].name, true);
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = true;
+                    spinBtn.innerHTML = '<i class="fa-solid fa-crown" style="color: #fbbf24;"></i> وقع الاختيار على الطالب الأخير تلقائياً';
+                }
+                const reSpinBtn = document.getElementById('reSpinBtn');
+                if (reSpinBtn) reSpinBtn.style.display = 'none';
+                return;
+            }
+
+            const students = getActiveStudentsList();
+            if (students.length === 1) {
+                announcePickedStudent(students[0], true);
+                return;
+            }
+
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
             document.getElementById('pickedStudentBox').style.display = 'none';
 
-            const students = getActiveStudentsList();
             const numSlices = students.length;
             const arc = (2 * Math.PI) / numSlices;
 
@@ -5868,20 +5970,35 @@
                     const pickedIndex = Math.floor(pointerAngle / arc) % numSlices;
                     const winningName = students[pickedIndex];
 
-                    announcePickedStudent(winningName);
+                    announcePickedStudent(winningName, false);
                 }
             }
 
             requestAnimationFrame(animate);
         }
 
-        function announcePickedStudent(name) {
+        function announcePickedStudent(name, isLast = false) {
             playSound('correct');
             confetti({
-                particleCount: 90,
-                spread: 70,
+                particleCount: isLast ? 120 : 90,
+                spread: isLast ? 80 : 70,
                 origin: { y: 0.5 }
             });
+
+            const badge = document.getElementById('pickedStudentBadge');
+            const note = document.getElementById('pickedStudentNote');
+            if (isLast) {
+                if (badge) badge.innerHTML = '<i class="fa-solid fa-crown" style="color: #d97706;"></i> الفارس الأخير المتبقي في الفصل:';
+                if (note) {
+                    note.style.display = 'block';
+                    note.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" style="color: #d97706;"></i> <b>من حظه مباشرة!</b> تم اختياره تلقائياً دون الحاجة لدوران العجلة.';
+                }
+            } else {
+                if (badge) badge.innerHTML = '<i class="fa-solid fa-trophy" style="color: #059669;"></i> وقع الاختيار على الفارس:';
+                if (note) {
+                    note.style.display = 'none';
+                }
+            }
 
             document.getElementById('pickedStudentName').textContent = name;
             document.getElementById('pickedStudentBox').style.display = 'block';
