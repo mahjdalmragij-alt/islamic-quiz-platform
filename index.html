@@ -21,9 +21,9 @@
 
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <script src="questions_bank.js?v=20261011_v3"></script>
-    <script src="questions_bank_g2.js?v=20261011_v3"></script>
-    <script src="questions_bank_g3.js?v=20261011_v3"></script>
+    <script src="questions_bank.js?v=20261014_v4"></script>
+    <script src="questions_bank_g2.js?v=20261014_v4"></script>
+    <script src="questions_bank_g3.js?v=20261014_v4"></script>
 
     <!-- Google Firebase Realtime Database SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1993,17 +1993,17 @@
                     <button type="button" class="grade-btn active" id="gradeToggleBtn1" onclick="switchLauncherGrade(1)">
                         <i class="fa-solid fa-1"></i>
                         <span>الصف الأول متوسط</span>
-                        <span class="grade-btn-badge">240 سؤالاً</span>
+                        <span class="grade-btn-badge">200 سؤال</span>
                     </button>
                     <button type="button" class="grade-btn" id="gradeToggleBtn2" onclick="switchLauncherGrade(2)">
                         <i class="fa-solid fa-2"></i>
                         <span>الصف الثاني متوسط</span>
-                        <span class="grade-btn-badge">240 سؤالاً</span>
+                        <span class="grade-btn-badge">200 سؤال</span>
                     </button>
                     <button type="button" class="grade-btn" id="gradeToggleBtn3" onclick="switchLauncherGrade(3)">
                         <i class="fa-solid fa-3"></i>
                         <span>الصف الثالث متوسط</span>
-                        <span class="grade-btn-badge">240 سؤالاً</span>
+                        <span class="grade-btn-badge">200 سؤال</span>
                     </button>
                 </div>
             </div>
@@ -2522,9 +2522,9 @@
         <section id="tabBank" class="tab-section">
             <div class="section-header-box">
                 <div>
-                    <h2 class="section-title"><i class="fa-solid fa-book-bookmark"></i> بنك الأسئلة الشامل المعتمد (720 سؤالاً معتمداً)</h2>
+                    <h2 class="section-title"><i class="fa-solid fa-book-bookmark"></i> بنك الأسئلة الشامل المعتمد (600 سؤال معتمد)</h2>
                     <p style="color: var(--text-muted); font-size: 13px; font-weight: 600;">
-                        بنك أسئلة رسمي مصنف بالكامل وفق الفهرس المدرسي لطبعة 1448هـ (240 للأول متوسط + 240 للثاني متوسط + 240 للثالث متوسط).
+                        بنك أسئلة رسمي مصنف بالكامل وفق الفهرس المدرسي لطبعة 1448هـ (200 للأول متوسط + 200 للثاني متوسط + 200 للثالث متوسط).
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -2540,16 +2540,16 @@
             <!-- أزرار تصفية بنك الأسئلة حسب المرحلة -->
             <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
                 <button type="button" class="btn-outline active" id="filterBankAll" style="padding: 6px 16px; font-weight: 800;" onclick="filterBankTable('all')">
-                    الكل (<span id="bankCountAll">720</span>)
+                    الكل (<span id="bankCountAll">600</span>)
                 </button>
                 <button type="button" class="btn-outline" id="filterBankG1" style="padding: 6px 16px; font-weight: 800;" onclick="filterBankTable(1)">
-                    الصف الأول متوسط (<span id="bankCountG1">240</span>)
+                    الصف الأول متوسط (<span id="bankCountG1">200</span>)
                 </button>
                 <button type="button" class="btn-outline" id="filterBankG2" style="padding: 6px 16px; font-weight: 800;" onclick="filterBankTable(2)">
-                    الصف الثاني متوسط (<span id="bankCountG2">240</span>)
+                    الصف الثاني متوسط (<span id="bankCountG2">200</span>)
                 </button>
                 <button type="button" class="btn-outline" id="filterBankG3" style="padding: 6px 16px; font-weight: 800;" onclick="filterBankTable(3)">
-                    الصف الثالث متوسط (<span id="bankCountG3">240</span>)
+                    الصف الثالث متوسط (<span id="bankCountG3">200</span>)
                 </button>
             </div>
 
@@ -4285,7 +4285,7 @@
             }
         ];
 
-        // اعتماد بنك الأسئلة الشامل (الصف الأول متوسط: 240 سؤالاً، الصف الثاني متوسط: 240 سؤالاً، الصف الثالث متوسط: 240 سؤالاً = 720 سؤالاً)
+        // اعتماد بنك الأسئلة الشامل (الصف الأول متوسط: 200 سؤال، الصف الثاني متوسط: 200 سؤال، الصف الثالث متوسط: 200 سؤال = 600 سؤال معتمد)
         const G1_QUESTIONS_POOL = (typeof OFFICIAL_200_QUESTIONS !== 'undefined' && OFFICIAL_200_QUESTIONS.length >= 100)
             ? OFFICIAL_200_QUESTIONS
             : (typeof window !== 'undefined' && window.OFFICIAL_200_QUESTIONS && window.OFFICIAL_200_QUESTIONS.length >= 100)
@@ -6079,16 +6079,16 @@
         function loadSavedData() {
             const masterList = MASTER_QUESTIONS;
 
-            const savedQuestions = localStorage.getItem('islamic_quiz_questions_master_1448_v3');
+            const savedQuestions = localStorage.getItem('islamic_quiz_questions_master_1448_v4');
             if (savedQuestions) {
                 try {
                     const parsed = JSON.parse(savedQuestions);
                     const hasG2 = Array.isArray(parsed) && parsed.some(q => q.grade === 2 || String(q.id).startsWith('g2_'));
                     const hasG3 = Array.isArray(parsed) && parsed.some(q => q.grade === 3 || String(q.id).startsWith('g3_'));
-                    if (Array.isArray(parsed) && parsed.length >= 720 && hasG2 && hasG3) {
+                    if (Array.isArray(parsed) && parsed.length >= 600 && hasG2 && hasG3) {
                         appState.questions = parsed;
                     } else {
-                        // ترقية تلقائية للبنك المعتمد المحدث (720 سؤالاً: 240 أول متوسط + 240 ثاني متوسط + 240 ثالث متوسط)
+                        // ترقية تلقائية للبنك المعتمد المحدث (600 سؤال: 200 أول متوسط + 200 ثاني متوسط + 200 ثالث متوسط)
                         appState.questions = [...masterList];
                         saveQuestionsToStorage();
                     }
@@ -6127,7 +6127,7 @@
         }
 
         function saveQuestionsToStorage() {
-            localStorage.setItem('islamic_quiz_questions_master_1448_v3', JSON.stringify(appState.questions));
+            localStorage.setItem('islamic_quiz_questions_master_1448_v4', JSON.stringify(appState.questions));
             updateTotalCounter();
         }
 
@@ -6592,7 +6592,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState.questions, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `islamic_quiz_questions_720_master_official.json`);
+            downloadAnchor.setAttribute("download", `islamic_quiz_questions_600_master_official.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
