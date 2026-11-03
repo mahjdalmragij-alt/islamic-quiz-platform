@@ -5368,30 +5368,14 @@
             // Question Text
             document.getElementById('currentQuestionTitle').textContent = q.title;
 
-            // خلط الخيارات عشوائياً عند كل عرض للسؤال حتى تتغير أماكنها ولا تأتي بترتيب متوقع
-            if (!q._shuffledOptions || q._shuffledForIndex !== appState.currentQuestionIndex) {
-                const items = q.options.map((opt, idx) => ({
-                    text: opt,
-                    isCorrect: idx === q.correctIndex
-                }));
-                // خلط عشوائي فيشر-يتس
-                for (let i = items.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [items[i], items[j]] = [items[j], items[i]];
-                }
-                q._shuffledOptions = items.map(it => it.text);
-                q._shuffledCorrectIndex = items.findIndex(it => it.isCorrect);
-                q._shuffledForIndex = appState.currentQuestionIndex;
-            }
-
-            // عرض الخيارات الأربعة مع إعادة ضبط الأزرار
+            // عرض الخيارات الأربعة متطابقة تماماً مع التسجيل الصوتي المعتمد
             for (let i = 0; i < 4; i++) {
                 const btn = document.getElementById(`choiceBtn${i}`);
                 btn.style.display = 'flex';
                 btn.className = 'choice-btn';
                 btn.style.opacity = '1';
                 btn.style.pointerEvents = 'auto';
-                document.getElementById(`choiceText${i}`).textContent = q._shuffledOptions[i] || `خيار ${i+1}`;
+                document.getElementById(`choiceText${i}`).textContent = q.options[i] || `خيار ${i+1}`;
             }
 
             // Explanation
@@ -5409,7 +5393,7 @@
             const clickedBtn = document.getElementById(`choiceBtn${index}`);
             if (clickedBtn && clickedBtn.classList.contains('wrong-attempt')) return;
 
-            const targetCorrectIndex = (q._shuffledCorrectIndex !== undefined) ? q._shuffledCorrectIndex : q.correctIndex;
+            const targetCorrectIndex = q.correctIndex;
             const isCorrect = (index === targetCorrectIndex);
 
             if (isCorrect) {
@@ -5510,7 +5494,7 @@
             const retryBanner = document.getElementById('retryChanceBanner');
             if (retryBanner) retryBanner.style.display = 'none';
 
-            const targetCorrectIndex = (q._shuffledCorrectIndex !== undefined) ? q._shuffledCorrectIndex : q.correctIndex;
+            const targetCorrectIndex = q.correctIndex;
             for (let i = 0; i < 4; i++) {
                 const btn = document.getElementById(`choiceBtn${i}`);
                 btn.classList.add('revealed');
@@ -5550,21 +5534,65 @@
             renderCurrentQuestion();
         }
 
-        // تشغيل / إيقاف قارئ السؤال بصوت القارئ الفصيح
+        let currentQuestionAudio = null;
+
+        // تشغيل / إيقاف قارئ السؤال بصوت القارئ الفصيح المعتمد (تسجيل استوديو حامد - نفس المحادثة)
         function toggleVoiceReader() {
-            if (typeof isSpeakingQuestion !== 'undefined' && isSpeakingQuestion) {
-                stopVoiceReading();
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            if (!q) return;
+
+            if (currentQuestionAudio && !currentQuestionAudio.paused) {
+                currentQuestionAudio.pause();
+                currentQuestionAudio.currentTime = 0;
                 updateVoiceReaderUI(false);
-            } else {
-                const q = appState.filteredQuestions[appState.currentQuestionIndex];
-                if (!q) return;
-                const activeOpts = q._shuffledOptions || q.options;
-                speakQuestionAndOptions(q.title, activeOpts, () => {
-                    updateVoiceReaderUI(true);
-                }, () => {
-                    updateVoiceReaderUI(false);
-                });
+                return;
             }
+
+            if (!currentQuestionAudio) {
+                currentQuestionAudio = new Audio();
+            }
+
+            // تشغيل ملف الاستوديو الفصيح الحقيقي المعتمد مباشرة
+            currentQuestionAudio.src = `audio/${q.id}.mp3`;
+            updateVoiceReaderUI(true);
+
+            currentQuestionAudio.play().then(() => {
+                // جاري تشغيل صوت القارئ الفصيح
+            }).catch(err => {
+                console.warn('Audio playback error, fallback to TTS:', err);
+                if (typeof speakQuestionAndOptions === 'function') {
+                    speakQuestionAndOptions(q.title, q.options, () => {
+                        updateVoiceReaderUI(true);
+                    }, () => {
+                        updateVoiceReaderUI(false);
+                    });
+                }
+            });
+
+            currentQuestionAudio.onended = () => {
+                updateVoiceReaderUI(false);
+            };
+
+            currentQuestionAudio.onerror = () => {
+                if (typeof speakQuestionAndOptions === 'function') {
+                    speakQuestionAndOptions(q.title, q.options, () => {
+                        updateVoiceReaderUI(true);
+                    }, () => {
+                        updateVoiceReaderUI(false);
+                    });
+                }
+            };
+        }
+
+        function stopVoiceReading() {
+            if (currentQuestionAudio) {
+                currentQuestionAudio.pause();
+                currentQuestionAudio.currentTime = 0;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            updateVoiceReaderUI(false);
         }
 
         function updateVoiceReaderUI(isSpeaking) {
