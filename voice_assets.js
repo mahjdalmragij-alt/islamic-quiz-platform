@@ -62,10 +62,10 @@ function speakQuestionAndOptions(title, options, onStart, onEnd) {
     // صياغة النص الإذاعي التعليمي الواضح
     let fullText = "السُّؤَالُ: " + title + " ... ";
     if (options && options.length === 4) {
-        fullText += "الْخِيَارُ أ: " + options[0] + " ... ";
-        fullText += "الْخِيَارُ ب: " + options[1] + " ... ";
-        fullText += "الْخِيَارُ ج: " + options[2] + " ... ";
-        fullText += "الْخِيَارُ د: " + options[3];
+        fullText += "الْخِيَارُ الأَوَّلُ: " + options[0] + " ... ";
+        fullText += "الْخِيَارُ الثَّانِي: " + options[1] + " ... ";
+        fullText += "الْخِيَارُ الثَّالِثُ: " + options[2] + " ... ";
+        fullText += "الْخِيَارُ الرَّابِعُ: " + options[3];
     }
 
     const utter = new SpeechSynthesisUtterance(fullText);
