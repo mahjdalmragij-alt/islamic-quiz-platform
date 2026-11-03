@@ -22,9 +22,9 @@
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="voice_assets.js?v=20261103_v1"></script>
-    <script src="questions_bank.js?v=20261014_v4"></script>
-    <script src="questions_bank_g2.js?v=20261014_v4"></script>
-    <script src="questions_bank_g3.js?v=20261014_v4"></script>
+    <script src="questions_bank.js?v=20261103_v6_sudais"></script>
+    <script src="questions_bank_g2.js?v=20261103_v6_sudais"></script>
+    <script src="questions_bank_g3.js?v=20261103_v6_sudais"></script>
 
     <!-- Google Firebase Realtime Database SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1298,6 +1298,35 @@
             40%, 80% { transform: translateX(6px); }
         }
 
+        
+        .btn-sudais-reciter {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #b45309, #78350f);
+            color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 9999px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .btn-sudais-reciter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+            background: linear-gradient(135deg, #d97706, #92400e);
+        }
+        .btn-sudais-reciter.reciting {
+            background: linear-gradient(135deg, #059669, #047857);
+            border-color: #34d399;
+            color: #ecfdf5;
+            animation: pulse 1.2s infinite;
+        }
+
         .btn-voice-reader {
             display: inline-flex;
             align-items: center;
@@ -2370,13 +2399,19 @@
                     </div>
                 </div>
 
-                <!-- نص السؤال الكبير لشاشة العرض مع زر القارئ الفصيح -->
+                <!-- نص السؤال الكبير لشاشة العرض مع زر القارئ الفصيح وقارئ القرآن الشيخ السديس -->
                 <div class="question-text-box" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
                     <h2 class="question-text" id="currentQuestionTitle" style="flex: 1; margin: 0;">جاري تحميل السؤال...</h2>
-                    <button type="button" id="btnVoiceReader" class="btn-voice-reader" onclick="toggleVoiceReader()" title="قراءة السؤال بصوت القارئ الفصيح">
-                        <i class="fa-solid fa-volume-high" id="voiceReaderIcon"></i>
-                        <span id="voiceReaderText">استمع للسؤال</span>
-                    </button>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" id="btnSudaisReciter" class="btn-sudais-reciter" style="display: none;" onclick="toggleSudaisReciter()" title="استمع للآية الكريمة بصوت الشيخ عبد الرحمن السديس">
+                            <i class="fa-solid fa-kaaba"></i>
+                            <span id="sudaisReciterText">تلاوة الشيخ السديس 🕌</span>
+                        </button>
+                        <button type="button" id="btnVoiceReader" class="btn-voice-reader" onclick="toggleVoiceReader()" title="قراءة السؤال بصوت القارئ الفصيح">
+                            <i class="fa-solid fa-volume-high" id="voiceReaderIcon"></i>
+                            <span id="voiceReaderText">استمع للسؤال</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- شريط تنبيه الفرصة الثانية للحل -->
@@ -5368,6 +5403,20 @@
             // Question Text
             document.getElementById('currentQuestionTitle').textContent = q.title;
 
+            // تحديث زر تلاوة الشيخ عبد الرحمن السديس للآيات الكريمة
+            const btnSudais = document.getElementById('btnSudaisReciter');
+            if (btnSudais) {
+                if (q.quranRecitation && q.quranRecitation.audio) {
+                    btnSudais.style.display = 'inline-flex';
+                    const sLabel = document.getElementById('sudaisReciterText');
+                    if (sLabel) {
+                        sLabel.textContent = `تلاوة السديس (سورة ${q.quranRecitation.surahName}) 🕌`;
+                    }
+                } else {
+                    btnSudais.style.display = 'none';
+                }
+            }
+
             // عرض الخيارات الأربعة متطابقة تماماً مع التسجيل الصوتي المعتمد
             for (let i = 0; i < 4; i++) {
                 const btn = document.getElementById(`choiceBtn${i}`);
@@ -5536,6 +5585,63 @@
 
         let currentQuestionAudio = null;
 
+        let currentSudaisAudio = null;
+
+        // تشغيل / إيقاف تلاوة الآية الكريمة بصوت الشيخ عبد الرحمن السديس
+        function toggleSudaisReciter() {
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            if (!q || !q.quranRecitation || !q.quranRecitation.audio) return;
+
+            if (currentSudaisAudio && !currentSudaisAudio.paused) {
+                currentSudaisAudio.pause();
+                currentSudaisAudio.currentTime = 0;
+                updateSudaisUI(false);
+                return;
+            }
+
+            stopVoiceReading();
+
+            if (!currentSudaisAudio) {
+                currentSudaisAudio = new Audio();
+            }
+
+            currentSudaisAudio.src = q.quranRecitation.audio;
+            updateSudaisUI(true);
+
+            currentSudaisAudio.play().catch(e => {
+                console.warn('Sudais audio error:', e);
+                updateSudaisUI(false);
+            });
+
+            currentSudaisAudio.onended = () => {
+                updateSudaisUI(false);
+            };
+
+            currentSudaisAudio.onerror = () => {
+                updateSudaisUI(false);
+            };
+        }
+
+        function updateSudaisUI(isReciting) {
+            const btn = document.getElementById('btnSudaisReciter');
+            const label = document.getElementById('sudaisReciterText');
+            const q = (appState.filteredQuestions && appState.filteredQuestions.length > 0)
+                ? appState.filteredQuestions[appState.currentQuestionIndex]
+                : null;
+            const surahName = (q && q.quranRecitation) ? q.quranRecitation.surahName : '';
+
+            if (!btn || !label) return;
+
+            if (isReciting) {
+                btn.classList.add('reciting');
+                label.textContent = `جاري تلاوة السديس (سورة ${surahName}) ⏸️`;
+            } else {
+                btn.classList.remove('reciting');
+                label.textContent = `تلاوة السديس (سورة ${surahName}) 🕌`;
+            }
+        }
+
+
         // تشغيل / إيقاف قارئ السؤال بصوت القارئ الفصيح المعتمد (تسجيل استوديو حامد - نفس المحادثة)
         function toggleVoiceReader() {
             const q = appState.filteredQuestions[appState.currentQuestionIndex];
@@ -5588,6 +5694,11 @@
             if (currentQuestionAudio) {
                 currentQuestionAudio.pause();
                 currentQuestionAudio.currentTime = 0;
+            }
+            if (currentSudaisAudio) {
+                currentSudaisAudio.pause();
+                currentSudaisAudio.currentTime = 0;
+                updateSudaisUI(false);
             }
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -6298,27 +6409,17 @@
         function loadSavedData() {
             const masterList = MASTER_QUESTIONS;
 
-            const savedQuestions = localStorage.getItem('islamic_quiz_questions_master_1448_v4');
-            if (savedQuestions) {
-                try {
-                    const parsed = JSON.parse(savedQuestions);
-                    const hasG2 = Array.isArray(parsed) && parsed.some(q => q.grade === 2 || String(q.id).startsWith('g2_'));
-                    const hasG3 = Array.isArray(parsed) && parsed.some(q => q.grade === 3 || String(q.id).startsWith('g3_'));
-                    if (Array.isArray(parsed) && parsed.length >= 600 && hasG2 && hasG3) {
-                        appState.questions = parsed;
-                    } else {
-                        // ترقية تلقائية للبنك المعتمد المحدث (600 سؤال: 200 أول متوسط + 200 ثاني متوسط + 200 ثالث متوسط)
-                        appState.questions = [...masterList];
-                        saveQuestionsToStorage();
-                    }
-                } catch(e) {
-                    appState.questions = [...masterList];
-                    saveQuestionsToStorage();
-                }
-            } else {
-                appState.questions = [...masterList];
-                saveQuestionsToStorage();
-            }
+            // تنظيف وإلغاء تخزين النسخ القديمة غير المشكولة
+            try {
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v4');
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v3');
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v2');
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v1');
+            } catch(e) {}
+
+            // تحميل بنك الأسئلة الجديد المعتمد المشكول بالكامل مع تلاوات السديس
+            appState.questions = [...masterList];
+            saveQuestionsToStorage();
 
             const savedClasses = localStorage.getItem('islamic_quiz_classes_v1');
             const singleClassFlag = localStorage.getItem('islamic_quiz_single_class_v5');
@@ -6346,7 +6447,7 @@
         }
 
         function saveQuestionsToStorage() {
-            localStorage.setItem('islamic_quiz_questions_master_1448_v4', JSON.stringify(appState.questions));
+            localStorage.setItem('islamic_quiz_questions_master_1448_v6_tashkeel_sudais', JSON.stringify(appState.questions));
             updateTotalCounter();
         }
 
