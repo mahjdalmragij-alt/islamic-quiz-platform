@@ -21,6 +21,7 @@
 
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script src="voice_assets.js?v=20261103_v1"></script>
     <script src="questions_bank.js?v=20261014_v4"></script>
     <script src="questions_bank_g2.js?v=20261014_v4"></script>
     <script src="questions_bank_g3.js?v=20261014_v4"></script>
@@ -1275,6 +1276,53 @@
             color: white;
         }
 
+        .choice-btn.wrong-attempt {
+            background: #fff1f2 !important;
+            border-color: #f43f5e !important;
+            color: #9f1239 !important;
+            opacity: 0.55;
+            cursor: not-allowed;
+            text-decoration: line-through;
+            pointer-events: none;
+            animation: shakeBtn 0.4s ease-in-out;
+        }
+
+        .choice-btn.wrong-attempt .choice-letter {
+            background: #f43f5e;
+            color: white;
+        }
+
+        @keyframes shakeBtn {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .btn-voice-reader {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #047857, #065f46);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(4, 120, 87, 0.25);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .btn-voice-reader:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(4, 120, 87, 0.35);
+        }
+        .btn-voice-reader.speaking {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            animation: pulse 1s infinite;
+        }
+
         /* Action Buttons Toolbar */
         .arena-actions {
             display: flex;
@@ -2322,9 +2370,18 @@
                     </div>
                 </div>
 
-                <!-- نص السؤال الكبير لشاشة العرض -->
-                <div class="question-text-box">
-                    <h2 class="question-text" id="currentQuestionTitle">جاري تحميل السؤال...</h2>
+                <!-- نص السؤال الكبير لشاشة العرض مع زر القارئ الفصيح -->
+                <div class="question-text-box" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <h2 class="question-text" id="currentQuestionTitle" style="flex: 1; margin: 0;">جاري تحميل السؤال...</h2>
+                    <button type="button" id="btnVoiceReader" class="btn-voice-reader" onclick="toggleVoiceReader()" title="قراءة السؤال بصوت القارئ الفصيح">
+                        <i class="fa-solid fa-volume-high" id="voiceReaderIcon"></i>
+                        <span id="voiceReaderText">استمع للسؤال</span>
+                    </button>
+                </div>
+
+                <!-- شريط تنبيه الفرصة الثانية للحل -->
+                <div id="retryChanceBanner" style="display: none; background: #fffbeb; border: 2px dashed #f59e0b; color: #b45309; padding: 10px 16px; border-radius: 12px; margin-bottom: 16px; font-weight: 800; font-size: 14px; text-align: center; animation: pulse 1.5s infinite;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> إجابة غير دقيقة! تأكد يا بطل ولديك فرصة ثانية، اختر من الخيارات المتبقية 🎯
                 </div>
 
                 <!-- الخيارات الأربعة الذكية -->
@@ -5266,6 +5323,18 @@
         function renderCurrentQuestion() {
             pauseTimer();
             appState.revealed = false;
+            appState.firstChanceUsed = false;
+            
+            // إيقاف أي قراءة صوتية سابقة وتحديث واجهة زر القارئ
+            if (typeof stopVoiceReading === 'function') {
+                stopVoiceReading();
+                updateVoiceReaderUI(false);
+            }
+
+            // إخفاء شريط الفرصة الثانية
+            const retryBanner = document.getElementById('retryChanceBanner');
+            if (retryBanner) retryBanner.style.display = 'none';
+
             document.getElementById('explanationBox').style.display = 'none';
 
             const total = appState.filteredQuestions.length;
@@ -5299,12 +5368,30 @@
             // Question Text
             document.getElementById('currentQuestionTitle').textContent = q.title;
 
-            // Choices
+            // خلط الخيارات عشوائياً عند كل عرض للسؤال حتى تتغير أماكنها ولا تأتي بترتيب متوقع
+            if (!q._shuffledOptions || q._shuffledForIndex !== appState.currentQuestionIndex) {
+                const items = q.options.map((opt, idx) => ({
+                    text: opt,
+                    isCorrect: idx === q.correctIndex
+                }));
+                // خلط عشوائي فيشر-يتس
+                for (let i = items.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [items[i], items[j]] = [items[j], items[i]];
+                }
+                q._shuffledOptions = items.map(it => it.text);
+                q._shuffledCorrectIndex = items.findIndex(it => it.isCorrect);
+                q._shuffledForIndex = appState.currentQuestionIndex;
+            }
+
+            // عرض الخيارات الأربعة مع إعادة ضبط الأزرار
             for (let i = 0; i < 4; i++) {
                 const btn = document.getElementById(`choiceBtn${i}`);
                 btn.style.display = 'flex';
                 btn.className = 'choice-btn';
-                document.getElementById(`choiceText${i}`).textContent = q.options[i] || `خيار ${i+1}`;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                document.getElementById(`choiceText${i}`).textContent = q._shuffledOptions[i] || `خيار ${i+1}`;
             }
 
             // Explanation
@@ -5319,34 +5406,95 @@
             const q = appState.filteredQuestions[appState.currentQuestionIndex];
             if (!q) return;
 
-            pauseTimer();
-            appState.revealed = true;
+            const clickedBtn = document.getElementById(`choiceBtn${index}`);
+            if (clickedBtn && clickedBtn.classList.contains('wrong-attempt')) return;
 
-            const isCorrect = (index === q.correctIndex);
-            for (let i = 0; i < 4; i++) {
-                const btn = document.getElementById(`choiceBtn${i}`);
-                btn.classList.add('revealed');
-                if (i === q.correctIndex) {
-                    btn.classList.add('correct');
-                } else if (i === index) {
-                    btn.classList.add('wrong');
-                }
-            }
-
-            document.getElementById('explanationBox').style.display = 'block';
+            const targetCorrectIndex = (q._shuffledCorrectIndex !== undefined) ? q._shuffledCorrectIndex : q.correctIndex;
+            const isCorrect = (index === targetCorrectIndex);
 
             if (isCorrect) {
+                // إجابة صحيحة!
+                pauseTimer();
+                appState.revealed = true;
+                if (typeof stopVoiceReading === 'function') stopVoiceReading();
+
+                const retryBanner = document.getElementById('retryChanceBanner');
+                if (retryBanner) retryBanner.style.display = 'none';
+
+                for (let i = 0; i < 4; i++) {
+                    const btn = document.getElementById(`choiceBtn${i}`);
+                    btn.classList.add('revealed');
+                    if (i === targetCorrectIndex) {
+                        btn.classList.add('correct');
+                    }
+                }
+
+                document.getElementById('explanationBox').style.display = 'block';
+
+                // تشغيل المؤثر الصوتي وصوت القارئ المعتمد: «أَحْسَنْتَ! إِجَابَةٌ صَحِيحَةٌ!»
                 playSound('correct');
+                if (typeof playVoiceFeedback === 'function') {
+                    playVoiceFeedback('correct');
+                }
+
                 confetti({
                     particleCount: 80,
                     spread: 70,
                     origin: { y: 0.7 }
                 });
+
+                // احتساب النقاط: 10 نقاط كاملة عند الإجابة من أول مرة، و 5 نقاط عند استخدام الفرصة الثانية
+                const points = appState.firstChanceUsed ? 5 : 10;
                 if (appState.currentMode === 'teams') {
-                    addScore(appState.currentTurnTeamIndex, 10);
+                    addScore(appState.currentTurnTeamIndex, points);
                 }
             } else {
-                playSound('wrong');
+                // إجابة خاطئة
+                if (!appState.firstChanceUsed) {
+                    // الفرصة الأولى: نبه الطالب ولا تكشف الإجابة، وامنحه فرصة ثانية للاختيار
+                    appState.firstChanceUsed = true;
+
+                    if (clickedBtn) {
+                        clickedBtn.classList.add('wrong-attempt');
+                    }
+
+                    playSound('wrong');
+                    // صوت القارئ: «تَأَكَّدْ يَا بَطَلْ! لَدَيْكَ فُرْصَةٌ ثَانِيَةٌ، حَاوِلْ مَرَّةً أُخْرَى.»
+                    if (typeof playVoiceFeedback === 'function') {
+                        playVoiceFeedback('retry');
+                    }
+
+                    const retryBanner = document.getElementById('retryChanceBanner');
+                    if (retryBanner) {
+                        retryBanner.style.display = 'block';
+                    }
+                } else {
+                    // الفرصة الثانية: انتهت المحاولات، نكشف الإجابة الصحيحة وننهي السؤال
+                    pauseTimer();
+                    appState.revealed = true;
+                    if (typeof stopVoiceReading === 'function') stopVoiceReading();
+
+                    const retryBanner = document.getElementById('retryChanceBanner');
+                    if (retryBanner) retryBanner.style.display = 'none';
+
+                    for (let i = 0; i < 4; i++) {
+                        const btn = document.getElementById(`choiceBtn${i}`);
+                        btn.classList.add('revealed');
+                        if (i === targetCorrectIndex) {
+                            btn.classList.add('correct');
+                        } else if (i === index) {
+                            btn.classList.add('wrong');
+                        }
+                    }
+
+                    document.getElementById('explanationBox').style.display = 'block';
+
+                    playSound('wrong');
+                    // صوت القارئ: «إِجَابَةٌ خَاطِئَةٌ! خَيْرُهَا فِي غَيْرِهَا يَا بَطَلْ.»
+                    if (typeof playVoiceFeedback === 'function') {
+                        playVoiceFeedback('wrong');
+                    }
+                }
             }
         }
 
@@ -5357,10 +5505,16 @@
 
             pauseTimer();
             appState.revealed = true;
+            if (typeof stopVoiceReading === 'function') stopVoiceReading();
+
+            const retryBanner = document.getElementById('retryChanceBanner');
+            if (retryBanner) retryBanner.style.display = 'none';
+
+            const targetCorrectIndex = (q._shuffledCorrectIndex !== undefined) ? q._shuffledCorrectIndex : q.correctIndex;
             for (let i = 0; i < 4; i++) {
                 const btn = document.getElementById(`choiceBtn${i}`);
                 btn.classList.add('revealed');
-                if (i === q.correctIndex) {
+                if (i === targetCorrectIndex) {
                     btn.classList.add('correct');
                 }
             }
@@ -5369,6 +5523,8 @@
         }
 
         function nextQuestion() {
+            if (typeof stopVoiceReading === 'function') stopVoiceReading();
+            updateVoiceReaderUI(false);
             playSound('click');
             if (appState.currentQuestionIndex < appState.filteredQuestions.length - 1) {
                 appState.currentQuestionIndex++;
@@ -5383,6 +5539,8 @@
         }
 
         function prevQuestion() {
+            if (typeof stopVoiceReading === 'function') stopVoiceReading();
+            updateVoiceReaderUI(false);
             playSound('click');
             if (appState.currentQuestionIndex > 0) {
                 appState.currentQuestionIndex--;
@@ -5390,6 +5548,39 @@
                 appState.currentQuestionIndex = appState.filteredQuestions.length - 1;
             }
             renderCurrentQuestion();
+        }
+
+        // تشغيل / إيقاف قارئ السؤال بصوت القارئ الفصيح
+        function toggleVoiceReader() {
+            if (typeof isSpeakingQuestion !== 'undefined' && isSpeakingQuestion) {
+                stopVoiceReading();
+                updateVoiceReaderUI(false);
+            } else {
+                const q = appState.filteredQuestions[appState.currentQuestionIndex];
+                if (!q) return;
+                const activeOpts = q._shuffledOptions || q.options;
+                speakQuestionAndOptions(q.title, activeOpts, () => {
+                    updateVoiceReaderUI(true);
+                }, () => {
+                    updateVoiceReaderUI(false);
+                });
+            }
+        }
+
+        function updateVoiceReaderUI(isSpeaking) {
+            const btn = document.getElementById('btnVoiceReader');
+            const icon = document.getElementById('voiceReaderIcon');
+            const text = document.getElementById('voiceReaderText');
+            if (!btn) return;
+            if (isSpeaking) {
+                btn.classList.add('speaking');
+                if (icon) icon.className = 'fa-solid fa-volume-xmark';
+                if (text) text.textContent = 'إيقاف القراءة';
+            } else {
+                btn.classList.remove('speaking');
+                if (icon) icon.className = 'fa-solid fa-volume-high';
+                if (text) text.textContent = 'استمع للسؤال';
+            }
         }
 
         /* -------------------------------------------------------------------------
