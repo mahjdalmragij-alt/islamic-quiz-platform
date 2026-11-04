@@ -22,9 +22,9 @@
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="voice_assets.js?v=20261103_v1"></script>
-    <script src="questions_bank.js?v=20261103_v6_sudais"></script>
-    <script src="questions_bank_g2.js?v=20261103_v6_sudais"></script>
-    <script src="questions_bank_g3.js?v=20261103_v6_sudais"></script>
+    <script src="questions_bank.js?v=20261104_v7_5qs"></script>
+    <script src="questions_bank_g2.js?v=20261104_v7_5qs"></script>
+    <script src="questions_bank_g3.js?v=20261104_v7_5qs"></script>
 
     <!-- Google Firebase Realtime Database SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -3649,10 +3649,52 @@
         };
 
         function getActiveCurriculum() {
-            if (typeof appState === 'undefined') return CURRICULUM_INDEX;
-            if (appState.currentGrade === 3) return CURRICULUM_INDEX_G3;
-            if (appState.currentGrade === 2) return CURRICULUM_INDEX_G2;
-            return CURRICULUM_INDEX;
+            const curGrade = (typeof appState !== 'undefined' && appState.currentGrade) ? appState.currentGrade : 1;
+            let questions = [];
+            if (typeof appState !== 'undefined' && appState.questions && appState.questions.length > 0) {
+                questions = appState.questions.filter(q => q.grade === curGrade);
+            } else if (typeof MASTER_QUESTIONS !== 'undefined' && MASTER_QUESTIONS.length > 0) {
+                questions = MASTER_QUESTIONS.filter(q => q.grade === curGrade);
+            } else if (typeof OFFICIAL_200_QUESTIONS !== 'undefined') {
+                if (curGrade === 3 && typeof OFFICIAL_200_QUESTIONS_G3 !== 'undefined') questions = OFFICIAL_200_QUESTIONS_G3;
+                else if (curGrade === 2 && typeof OFFICIAL_200_QUESTIONS_G2 !== 'undefined') questions = OFFICIAL_200_QUESTIONS_G2;
+                else questions = OFFICIAL_200_QUESTIONS;
+            }
+
+            const subjectTitles = {
+                tawheed: 'التوحيد',
+                tafseer: 'التفسير',
+                hadith: 'الحديث',
+                fiqh: 'الفقه'
+            };
+
+            const curriculum = {};
+            ['tawheed', 'tafseer', 'hadith', 'fiqh'].forEach(subKey => {
+                curriculum[subKey] = {
+                    title: subjectTitles[subKey] || subKey,
+                    units: []
+                };
+            });
+
+            const unitMap = {};
+            questions.forEach(q => {
+                const sub = q.subject;
+                if (!curriculum[sub]) return;
+                const uKey = sub + '___' + q.unit;
+                if (!unitMap[uKey]) {
+                    const unitObj = {
+                        title: q.unit,
+                        lessons: []
+                    };
+                    curriculum[sub].units.push(unitObj);
+                    unitMap[uKey] = unitObj;
+                }
+                if (q.lesson && !unitMap[uKey].lessons.includes(q.lesson)) {
+                    unitMap[uKey].lessons.push(q.lesson);
+                }
+            });
+
+            return curriculum;
         }
 
         /* -------------------------------------------------------------------------
@@ -4777,13 +4819,18 @@
             const matches = appState.questions.filter(q => {
                 const matchGrade = (q.grade === appState.currentGrade);
                 const matchSubject = (subject === 'all' || q.subject === subject);
-                const matchUnit = (unit === 'all' || q.unit === unit || textMatches(q.unit, unit));
-                const matchLesson = (lesson === 'all' || q.lesson === lesson || textMatches(q.lesson, lesson));
+                const matchUnit = (unit === 'all' || q.unit === unit);
+                const matchLesson = (lesson === 'all' || q.lesson === lesson);
                 const matchDiff = (diff === 'all' || q.difficulty === diff);
                 return matchGrade && matchSubject && matchUnit && matchLesson && matchDiff;
             });
 
-            document.getElementById('launcherMatchCount').textContent = matches.length;
+            // إذا تم اختيار وحدة أو درس محدد، المسابقة تكون دائماً 5 أسئلة جاهزة
+            let displayCount = matches.length;
+            if (unit !== 'all' || lesson !== 'all') {
+                displayCount = Math.min(5, matches.length);
+            }
+            document.getElementById('launcherMatchCount').textContent = displayCount;
         }
 
         function launchGameFromWizard() {
@@ -4796,22 +4843,15 @@
             appState.filterDifficulty = document.getElementById('launcherDifficulty').value;
             appState.activeClassId = parseInt(document.getElementById('launcherClassSelect').value);
 
-            // تصفية الأسئلة بناء على المرحلة والمادة والوحدة والدرس
-            appState.filteredQuestions = appState.questions.filter(q => {
+            // تصفية الأسئلة بناء على المرحلة والمادة والوحدة والدرس بدقة تامة وبلا خلط
+            let matches = appState.questions.filter(q => {
                 const matchGrade = (q.grade === appState.currentGrade);
                 const matchSubject = (appState.filterSubject === 'all' || q.subject === appState.filterSubject);
-                const matchUnit = (appState.filterUnit === 'all' || q.unit === appState.filterUnit || textMatches(q.unit, appState.filterUnit));
-                const matchLesson = (appState.filterLesson === 'all' || q.lesson === appState.filterLesson || textMatches(q.lesson, appState.filterLesson));
+                const matchUnit = (appState.filterUnit === 'all' || q.unit === appState.filterUnit);
+                const matchLesson = (appState.filterLesson === 'all' || q.lesson === appState.filterLesson);
                 const matchDiff = (appState.filterDifficulty === 'all' || q.difficulty === appState.filterDifficulty);
                 return matchGrade && matchSubject && matchUnit && matchLesson && matchDiff;
             });
-
-            // إذا لم توجد أسئلة مباشرة، نأخذ أسئلة الوحدة أو المادة لنفس المرحلة لضمان بدء المسابقة
-            if (appState.filteredQuestions.length === 0) {
-                appState.filteredQuestions = appState.questions.filter(q => {
-                    return (q.grade === appState.currentGrade) && (appState.filterSubject === 'all' || q.subject === appState.filterSubject);
-                });
-            }
 
             // تطبيق نظام الترتيب: تسلسلي ثابت بنفس ترتيب الكتاب في كل جولة (افتراضي) أو عشوائي
             const orderMode = document.getElementById('launcherOrder') ? document.getElementById('launcherOrder').value : 'sequential';
@@ -4819,18 +4859,23 @@
 
             if (orderMode === 'sequential') {
                 const subjectPriority = { tawheed: 1, tafseer: 2, hadith: 3, fiqh: 4 };
-                appState.filteredQuestions.sort((a, b) => {
-                    // أولاً: ترتيب المادة الأساسي (توحيد -> تفسير -> حديث -> فقه)
+                matches.sort((a, b) => {
                     const pA = subjectPriority[a.subject] || 99;
                     const pB = subjectPriority[b.subject] || 99;
                     if (pA !== pB) return pA - pB;
-                    // ثانياً: ترتيب رقم السؤال التسلسلي المطابق لترتيب الكتاب (1..50)
                     const numA = parseInt(String(a.id).split('_').pop()) || 0;
                     const numB = parseInt(String(b.id).split('_').pop()) || 0;
                     return numA - numB;
                 });
             } else if (orderMode === 'random') {
-                appState.filteredQuestions.sort(() => Math.random() - 0.5);
+                matches.sort(() => Math.random() - 0.5);
+            }
+
+            // إذا اختار المعلم وحدة محددة أو درساً محدداً، نأخذ دائماً بالضبط 5 أسئلة لجولة المسابقة
+            if (appState.filterUnit !== 'all' || appState.filterLesson !== 'all') {
+                appState.filteredQuestions = matches.slice(0, 5);
+            } else {
+                appState.filteredQuestions = matches;
             }
 
             // تحديث شريط النطاق في ساحة اللعب مع ذكر المرحلة والفرع
@@ -6411,6 +6456,8 @@
 
             // تنظيف وإلغاء تخزين النسخ القديمة غير المشكولة
             try {
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v7_5qs');
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v5');
                 localStorage.removeItem('islamic_quiz_questions_master_1448_v4');
                 localStorage.removeItem('islamic_quiz_questions_master_1448_v3');
                 localStorage.removeItem('islamic_quiz_questions_master_1448_v2');
@@ -6447,7 +6494,7 @@
         }
 
         function saveQuestionsToStorage() {
-            localStorage.setItem('islamic_quiz_questions_master_1448_v6_tashkeel_sudais', JSON.stringify(appState.questions));
+            localStorage.setItem('islamic_quiz_questions_master_1448_v7_5qs', JSON.stringify(appState.questions));
             updateTotalCounter();
         }
 
