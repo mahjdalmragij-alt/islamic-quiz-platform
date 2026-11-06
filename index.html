@@ -5489,7 +5489,7 @@
                 return;
             }
 
-            // إيقاف أي قراءة سابقة لاسم طالب
+            // إيقاف أي قراءة صوتية سابقة لاسم طالب
             if (currentStudentAudio) {
                 try {
                     currentStudentAudio.pause();
@@ -5509,7 +5509,7 @@
             const cleanName = name.trim();
             let audioSrc = null;
 
-            // مطابقة اسم الطالب مع التسجيل الأستوديو الموحد (بصوت القارئ حامد المعتمد للأسئلة)
+            // مطابقة اسم الطالب مع التسجيل الأستوديو الموحد (بصوت القارئ حامد المعتمد لقراءة الأسئلة)
             if (typeof STUDENT_STUDIO_VOICES !== 'undefined' && STUDENT_STUDIO_VOICES[cleanName]) {
                 audioSrc = STUDENT_STUDIO_VOICES[cleanName];
             } else if (typeof STUDENT_STUDIO_VOICES !== 'undefined' && STUDENT_STUDIO_VOICES['default_champion']) {
@@ -5532,7 +5532,7 @@
                 const playPromise = currentStudentAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(err => {
-                        console.warn('Student audio play auto-play warning:', err);
+                        console.warn('Student audio auto-play warning:', err);
                         finish();
                     });
                 }
@@ -5543,6 +5543,1134 @@
 
             // صمام أمان لإنهاء الكول باك تلقائياً إذا تأخر التشغيل
             setTimeout(finish, 4000);
+        }
+
+        function playMillionaireAnnouncer(level) {
+            if (!appState.soundEnabled) return;
+            try {
+                if (currentAnnouncerAudio) {
+                    currentAnnouncerAudio.pause();
+                    currentAnnouncerAudio.currentTime = 0;
+                }
+                currentAnnouncerAudio = new Audio(`audio/m_level_${level}.mp3`);
+                currentAnnouncerAudio.play().catch(e => console.warn('Announcer audio error:', e));
+            } catch(e) {
+                console.warn('Announcer error:', e);
+            }
+        }
+
+        function playTensionHeartbeat() {
+            if (!appState.soundEnabled) return;
+            try {
+                if (!currentTensionAudio) {
+                    currentTensionAudio = new Audio('audio/tension_heartbeat.mp3');
+                    currentTensionAudio.loop = true;
+                }
+                currentTensionAudio.volume = 0.65;
+                setTimeout(() => {
+                    if (appState.millionaire && appState.millionaire.currentLevel >= 8 && !appState.millionaire.locked) {
+                        currentTensionAudio.play().catch(e => console.warn('Tension play error:', e));
+                    }
+                }, 1200);
+            } catch(e) {
+                console.warn('Tension audio error:', e);
+            }
+        }
+
+        function stopTensionHeartbeat() {
+            if (currentTensionAudio) {
+                currentTensionAudio.pause();
+                currentTensionAudio.currentTime = 0;
+            }
+            if (currentAnnouncerAudio) {
+                currentAnnouncerAudio.pause();
+                currentAnnouncerAudio.currentTime = 0;
+            }
+        }
+
+        let currentMillionaireAudio = null;
+        let currentMillionaireSudaisAudio = null;
+
+        function toggleMillionaireVoiceReader() {
+            if (!appState.millionaire) return;
+            const m = appState.millionaire;
+            const q = m.questions[m.currentLevel - 1];
+            if (!q) return;
+
+            if (currentMillionaireAudio && !currentMillionaireAudio.paused) {
+                currentMillionaireAudio.pause();
+                currentMillionaireAudio.currentTime = 0;
+                updateMillionaireVoiceReaderUI(false);
+                return;
+            }
+
+            stopMillionaireVoiceReading();
+
+            if (!currentMillionaireAudio) {
+                currentMillionaireAudio = new Audio();
+            }
+
+            currentMillionaireAudio.src = `audio/${q.id}.mp3`;
+            updateMillionaireVoiceReaderUI(true);
+
+            currentMillionaireAudio.play().then(() => {
+                // playing
+            }).catch(err => {
+                console.warn('Millionaire audio playback error:', err);
+                updateMillionaireVoiceReaderUI(false);
+            });
+
+            currentMillionaireAudio.onended = () => {
+                updateMillionaireVoiceReaderUI(false);
+            };
+
+            currentMillionaireAudio.onerror = () => {
+                updateMillionaireVoiceReaderUI(false);
+            };
+        }
+
+        function toggleMillionaireSudaisReciter() {
+            if (!appState.millionaire) return;
+            const m = appState.millionaire;
+            const q = m.questions[m.currentLevel - 1];
+            if (!q || !q.quranRecitation || !q.quranRecitation.audio) return;
+
+            if (currentMillionaireSudaisAudio && !currentMillionaireSudaisAudio.paused) {
+                currentMillionaireSudaisAudio.pause();
+                currentMillionaireSudaisAudio.currentTime = 0;
+                updateMillionaireSudaisUI(false);
+                return;
+            }
+
+            stopMillionaireVoiceReading();
+
+            if (!currentMillionaireSudaisAudio) {
+                currentMillionaireSudaisAudio = new Audio();
+            }
+
+            currentMillionaireSudaisAudio.src = q.quranRecitation.audio;
+            updateMillionaireSudaisUI(true);
+
+            currentMillionaireSudaisAudio.play().catch(e => {
+                console.warn('Millionaire Sudais error:', e);
+                updateMillionaireSudaisUI(false);
+            });
+
+            currentMillionaireSudaisAudio.onended = () => {
+                updateMillionaireSudaisUI(false);
+            };
+
+            currentMillionaireSudaisAudio.onerror = () => {
+                updateMillionaireSudaisUI(false);
+            };
+        }
+
+        function stopMillionaireVoiceReading() {
+            stopTensionHeartbeat();
+            if (currentMillionaireAudio) {
+                currentMillionaireAudio.pause();
+                currentMillionaireAudio.currentTime = 0;
+            }
+            if (currentMillionaireSudaisAudio) {
+                currentMillionaireSudaisAudio.pause();
+                currentMillionaireSudaisAudio.currentTime = 0;
+            }
+            updateMillionaireVoiceReaderUI(false);
+            updateMillionaireSudaisUI(false);
+        }
+
+        function updateMillionaireVoiceReaderUI(isSpeaking) {
+            const btn = document.getElementById('mBtnVoiceReader');
+            const icon = document.getElementById('mVoiceReaderIcon');
+            const text = document.getElementById('mVoiceReaderText');
+            if (!btn) return;
+            if (isSpeaking) {
+                btn.classList.add('speaking');
+                if (icon) icon.className = 'fa-solid fa-volume-xmark';
+                if (text) text.textContent = 'إيقاف القراءة';
+            } else {
+                btn.classList.remove('speaking');
+                if (icon) icon.className = 'fa-solid fa-volume-high';
+                if (text) text.textContent = 'استمع للسؤال';
+            }
+        }
+
+        function updateMillionaireSudaisUI(isReciting) {
+            const btn = document.getElementById('mBtnSudaisReciter');
+            const label = document.getElementById('mSudaisReciterText');
+            if (!btn || !label) return;
+            const m = appState.millionaire;
+            const q = (m && m.questions) ? m.questions[m.currentLevel - 1] : null;
+            const surahName = (q && q.quranRecitation) ? q.quranRecitation.surahName : '';
+
+            if (isReciting) {
+                btn.classList.add('reciting');
+                label.textContent = `جاري تلاوة السديس (سورة ${surahName}) ⏸️`;
+            } else {
+                btn.classList.remove('reciting');
+                label.textContent = `تلاوة السديس (سورة ${surahName}) 🕌`;
+            }
+        }
+
+        /* -------------------------------------------------------------------------
+           6. ساحة عرض الأسئلة والتحكم في الإجابات
+        ------------------------------------------------------------------------- */
+        function renderCurrentQuestion() {
+            pauseTimer();
+            appState.revealed = false;
+            appState.firstChanceUsed = false;
+            
+            // إيقاف أي قراءة صوتية سابقة وتحديث واجهة زر القارئ
+            if (typeof stopVoiceReading === 'function') {
+                stopVoiceReading();
+                updateVoiceReaderUI(false);
+            }
+
+            // إخفاء شريط الفرصة الثانية
+            const retryBanner = document.getElementById('retryChanceBanner');
+            if (retryBanner) retryBanner.style.display = 'none';
+
+            document.getElementById('explanationBox').style.display = 'none';
+
+            const total = appState.filteredQuestions.length;
+            document.getElementById('questionIndexBadge').textContent = total > 0 ? (appState.currentQuestionIndex + 1) : 0;
+            document.getElementById('questionTotalBadge').textContent = total;
+
+            if (total === 0) {
+                document.getElementById('currentQuestionTitle').textContent = "لا توجد أسئلة متطابقة مع الاختيارات المحددة.";
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`choiceBtn${i}`).style.display = 'none';
+                }
+                return;
+            }
+
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            
+            // Meta tags
+            const subTag = document.getElementById('questionSubjectTag');
+            const subjectNames = { tawheed: 'التوحيد', tafseer: 'التفسير', hadith: 'الحديث', fiqh: 'الفقه' };
+            subTag.textContent = subjectNames[q.subject] || 'عام';
+            subTag.className = `tag-pill subject-${q.subject}`;
+
+            document.getElementById('questionUnitTag').textContent = q.unit || '-';
+            document.getElementById('questionLessonTag').textContent = q.lesson || '-';
+
+            const diffTag = document.getElementById('questionDiffTag');
+            const diffNames = { easy: 'سهل (مفاهيم)', medium: 'متوسط (فهم وتطبيق)', hard: 'صعب (ذكاء)' };
+            diffTag.textContent = diffNames[q.difficulty] || 'متوسط';
+            diffTag.className = `tag-pill diff-${q.difficulty === 'easy' ? 'easy' : (q.difficulty === 'hard' ? 'hard' : 'med')}`;
+
+            // Question Text
+            document.getElementById('currentQuestionTitle').textContent = q.title;
+
+            // تحديث زر تلاوة الشيخ عبد الرحمن السديس للآيات الكريمة
+            const btnSudais = document.getElementById('btnSudaisReciter');
+            if (btnSudais) {
+                if (q.quranRecitation && q.quranRecitation.audio) {
+                    btnSudais.style.display = 'inline-flex';
+                    const sLabel = document.getElementById('sudaisReciterText');
+                    if (sLabel) {
+                        sLabel.textContent = `تلاوة السديس (سورة ${q.quranRecitation.surahName}) 🕌`;
+                    }
+                } else {
+                    btnSudais.style.display = 'none';
+                }
+            }
+
+            // عرض الخيارات الأربعة متطابقة تماماً مع التسجيل الصوتي المعتمد
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`choiceBtn${i}`);
+                btn.style.display = 'flex';
+                btn.className = 'choice-btn';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                document.getElementById(`choiceText${i}`).textContent = q.options[i] || `خيار ${i+1}`;
+            }
+
+            // Explanation
+            document.getElementById('explanationText').textContent = q.explanation || "الإجابة الصحيحة معتمدة من كتاب الدراسات الإسلامية المقرّر.";
+
+            // Reset Timer
+            startTimer(30);
+        }
+
+        function selectChoice(index) {
+            if (appState.revealed) return;
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            if (!q) return;
+
+            const clickedBtn = document.getElementById(`choiceBtn${index}`);
+            if (clickedBtn && clickedBtn.classList.contains('wrong-attempt')) return;
+
+            const targetCorrectIndex = q.correctIndex;
+            const isCorrect = (index === targetCorrectIndex);
+
+            if (isCorrect) {
+                // إجابة صحيحة!
+                pauseTimer();
+                appState.revealed = true;
+                if (typeof stopVoiceReading === 'function') stopVoiceReading();
+
+                const retryBanner = document.getElementById('retryChanceBanner');
+                if (retryBanner) retryBanner.style.display = 'none';
+
+                for (let i = 0; i < 4; i++) {
+                    const btn = document.getElementById(`choiceBtn${i}`);
+                    btn.classList.add('revealed');
+                    if (i === targetCorrectIndex) {
+                        btn.classList.add('correct');
+                    }
+                }
+
+                document.getElementById('explanationBox').style.display = 'block';
+
+                // تشغيل المؤثر الصوتي وصوت القارئ المعتمد: «أَحْسَنْتَ! إِجَابَةٌ صَحِيحَةٌ!»
+                playSound('correct');
+                if (typeof playVoiceFeedback === 'function') {
+                    playVoiceFeedback('correct');
+                }
+
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.7 }
+                });
+
+                // احتساب النقاط: 10 نقاط كاملة عند الإجابة من أول مرة، و 5 نقاط عند استخدام الفرصة الثانية
+                const points = appState.firstChanceUsed ? 5 : 10;
+                if (appState.currentMode === 'teams') {
+                    addScore(appState.currentTurnTeamIndex, points);
+                }
+            } else {
+                // إجابة خاطئة
+                if (!appState.firstChanceUsed) {
+                    // الفرصة الأولى: نبه الطالب ولا تكشف الإجابة، وامنحه فرصة ثانية للاختيار
+                    appState.firstChanceUsed = true;
+
+                    if (clickedBtn) {
+                        clickedBtn.classList.add('wrong-attempt');
+                    }
+
+                    playSound('wrong');
+                    // صوت القارئ: «تَأَكَّدْ يَا بَطَلْ! لَدَيْكَ فُرْصَةٌ ثَانِيَةٌ، حَاوِلْ مَرَّةً أُخْرَى.»
+                    if (typeof playVoiceFeedback === 'function') {
+                        playVoiceFeedback('retry');
+                    }
+
+                    const retryBanner = document.getElementById('retryChanceBanner');
+                    if (retryBanner) {
+                        retryBanner.style.display = 'block';
+                    }
+                } else {
+                    // الفرصة الثانية: انتهت المحاولات، نكشف الإجابة الصحيحة وننهي السؤال
+                    pauseTimer();
+                    appState.revealed = true;
+                    if (typeof stopVoiceReading === 'function') stopVoiceReading();
+
+                    const retryBanner = document.getElementById('retryChanceBanner');
+                    if (retryBanner) retryBanner.style.display = 'none';
+
+                    for (let i = 0; i < 4; i++) {
+                        const btn = document.getElementById(`choiceBtn${i}`);
+                        btn.classList.add('revealed');
+                        if (i === targetCorrectIndex) {
+                            btn.classList.add('correct');
+                        } else if (i === index) {
+                            btn.classList.add('wrong');
+                        }
+                    }
+
+                    document.getElementById('explanationBox').style.display = 'block';
+
+                    playSound('wrong');
+                    // صوت القارئ: «إِجَابَةٌ خَاطِئَةٌ! خَيْرُهَا فِي غَيْرِهَا يَا بَطَلْ.»
+                    if (typeof playVoiceFeedback === 'function') {
+                        playVoiceFeedback('wrong');
+                    }
+                }
+            }
+        }
+
+        function revealAnswer() {
+            if (appState.revealed) return;
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            if (!q) return;
+
+            pauseTimer();
+            appState.revealed = true;
+            if (typeof stopVoiceReading === 'function') stopVoiceReading();
+
+            const retryBanner = document.getElementById('retryChanceBanner');
+            if (retryBanner) retryBanner.style.display = 'none';
+
+            const targetCorrectIndex = q.correctIndex;
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`choiceBtn${i}`);
+                btn.classList.add('revealed');
+                if (i === targetCorrectIndex) {
+                    btn.classList.add('correct');
+                }
+            }
+            document.getElementById('explanationBox').style.display = 'block';
+            playSound('click');
+        }
+
+        function nextQuestion() {
+            if (typeof stopVoiceReading === 'function') stopVoiceReading();
+            updateVoiceReaderUI(false);
+            playSound('click');
+            if (appState.currentQuestionIndex < appState.filteredQuestions.length - 1) {
+                appState.currentQuestionIndex++;
+            } else {
+                appState.currentQuestionIndex = 0;
+            }
+            if (appState.currentMode === 'teams') {
+                appState.currentTurnTeamIndex = (appState.currentTurnTeamIndex + 1) % appState.teams.length;
+                renderTeams();
+            }
+            renderCurrentQuestion();
+        }
+
+        function prevQuestion() {
+            if (typeof stopVoiceReading === 'function') stopVoiceReading();
+            updateVoiceReaderUI(false);
+            playSound('click');
+            if (appState.currentQuestionIndex > 0) {
+                appState.currentQuestionIndex--;
+            } else {
+                appState.currentQuestionIndex = appState.filteredQuestions.length - 1;
+            }
+            renderCurrentQuestion();
+        }
+
+        let currentQuestionAudio = null;
+
+        let currentSudaisAudio = null;
+
+        // تشغيل / إيقاف تلاوة الآية الكريمة بصوت الشيخ عبد الرحمن السديس
+        function toggleSudaisReciter() {
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            if (!q || !q.quranRecitation || !q.quranRecitation.audio) return;
+
+            if (currentSudaisAudio && !currentSudaisAudio.paused) {
+                currentSudaisAudio.pause();
+                currentSudaisAudio.currentTime = 0;
+                updateSudaisUI(false);
+                return;
+            }
+
+            stopVoiceReading();
+
+            if (!currentSudaisAudio) {
+                currentSudaisAudio = new Audio();
+            }
+
+            currentSudaisAudio.src = q.quranRecitation.audio;
+            updateSudaisUI(true);
+
+            currentSudaisAudio.play().catch(e => {
+                console.warn('Sudais audio error:', e);
+                updateSudaisUI(false);
+            });
+
+            currentSudaisAudio.onended = () => {
+                updateSudaisUI(false);
+            };
+
+            currentSudaisAudio.onerror = () => {
+                updateSudaisUI(false);
+            };
+        }
+
+        function updateSudaisUI(isReciting) {
+            const btn = document.getElementById('btnSudaisReciter');
+            const label = document.getElementById('sudaisReciterText');
+            const q = (appState.filteredQuestions && appState.filteredQuestions.length > 0)
+                ? appState.filteredQuestions[appState.currentQuestionIndex]
+                : null;
+            const surahName = (q && q.quranRecitation) ? q.quranRecitation.surahName : '';
+
+            if (!btn || !label) return;
+
+            if (isReciting) {
+                btn.classList.add('reciting');
+                label.textContent = `جاري تلاوة السديس (سورة ${surahName}) ⏸️`;
+            } else {
+                btn.classList.remove('reciting');
+                label.textContent = `تلاوة السديس (سورة ${surahName}) 🕌`;
+            }
+        }
+
+
+        // تشغيل / إيقاف قارئ السؤال بصوت القارئ الفصيح المعتمد (تسجيل استوديو حامد - نفس المحادثة)
+        function toggleVoiceReader() {
+            const q = appState.filteredQuestions[appState.currentQuestionIndex];
+            if (!q) return;
+
+            if (currentQuestionAudio && !currentQuestionAudio.paused) {
+                currentQuestionAudio.pause();
+                currentQuestionAudio.currentTime = 0;
+                updateVoiceReaderUI(false);
+                return;
+            }
+
+            if (!currentQuestionAudio) {
+                currentQuestionAudio = new Audio();
+            }
+
+            // تشغيل ملف الاستوديو الفصيح الحقيقي المعتمد مباشرة
+            currentQuestionAudio.src = `audio/${q.id}.mp3`;
+            updateVoiceReaderUI(true);
+
+            currentQuestionAudio.play().then(() => {
+                // جاري تشغيل صوت القارئ الفصيح
+            }).catch(err => {
+                console.warn('Audio playback error, fallback to TTS:', err);
+                if (typeof speakQuestionAndOptions === 'function') {
+                    speakQuestionAndOptions(q.title, q.options, () => {
+                        updateVoiceReaderUI(true);
+                    }, () => {
+                        updateVoiceReaderUI(false);
+                    });
+                }
+            });
+
+            currentQuestionAudio.onended = () => {
+                updateVoiceReaderUI(false);
+            };
+
+            currentQuestionAudio.onerror = () => {
+                if (typeof speakQuestionAndOptions === 'function') {
+                    speakQuestionAndOptions(q.title, q.options, () => {
+                        updateVoiceReaderUI(true);
+                    }, () => {
+                        updateVoiceReaderUI(false);
+                    });
+                }
+            };
+        }
+
+        function stopVoiceReading() {
+            if (typeof stopMillionaireVoiceReading === 'function') stopMillionaireVoiceReading();
+            if (currentQuestionAudio) {
+                currentQuestionAudio.pause();
+                currentQuestionAudio.currentTime = 0;
+            }
+            if (currentSudaisAudio) {
+                currentSudaisAudio.pause();
+                currentSudaisAudio.currentTime = 0;
+                updateSudaisUI(false);
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            updateVoiceReaderUI(false);
+        }
+
+        function updateVoiceReaderUI(isSpeaking) {
+            const btn = document.getElementById('btnVoiceReader');
+            const icon = document.getElementById('voiceReaderIcon');
+            const text = document.getElementById('voiceReaderText');
+            if (!btn) return;
+            if (isSpeaking) {
+                btn.classList.add('speaking');
+                if (icon) icon.className = 'fa-solid fa-volume-xmark';
+                if (text) text.textContent = 'إيقاف القراءة';
+            } else {
+                btn.classList.remove('speaking');
+                if (icon) icon.className = 'fa-solid fa-volume-high';
+                if (text) text.textContent = 'استمع للسؤال';
+            }
+        }
+
+        /* -------------------------------------------------------------------------
+           7. المؤقت الزمني
+        ------------------------------------------------------------------------- */
+        function startTimer(seconds) {
+            clearInterval(appState.timerInterval);
+            appState.timerValue = seconds;
+            appState.timerRunning = true;
+            updateTimerDisplay();
+
+            appState.timerInterval = setInterval(() => {
+                if (appState.timerValue > 0) {
+                    appState.timerValue--;
+                    updateTimerDisplay();
+                    if (appState.timerValue <= 5 && appState.timerValue > 0) {
+                        playSound('tick');
+                    }
+                } else {
+                    clearInterval(appState.timerInterval);
+                    appState.timerRunning = false;
+                    playSound('wrong');
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(appState.timerInterval);
+            appState.timerRunning = false;
+        }
+
+        function updateTimerDisplay() {
+            const el = document.getElementById('timerSeconds');
+            if (el) {
+                el.textContent = appState.timerValue;
+                el.classList.toggle('warning', appState.timerValue <= 5);
+            }
+        }
+
+        /* -------------------------------------------------------------------------
+           8. لوحة نقاط الفرق وتخصيص وتسمية المجموعات
+        ------------------------------------------------------------------------- */
+        const DEFAULT_TEAM_PALETTE = [
+            { id: 1, color: "#047857", bg: "#ecfdf5", border: "#10b981", defaultName: "فرسان التوحيد" },
+            { id: 2, color: "#2563eb", bg: "#eff6ff", border: "#3b82f6", defaultName: "أبطال الفقه" },
+            { id: 3, color: "#d97706", bg: "#fffbeb", border: "#f59e0b", defaultName: "رواة الحديث" },
+            { id: 4, color: "#7c3aed", bg: "#f5f3ff", border: "#8b5cf6", defaultName: "حفظة التفسير" },
+            { id: 5, color: "#e11d48", bg: "#fff1f2", border: "#f43f5e", defaultName: "نجوم السيرة" },
+            { id: 6, color: "#0891b2", bg: "#ecfeff", border: "#06b6d4", defaultName: "دروع العقيدة" }
+        ];
+
+        const TEAM_PRESET_PACKS = {
+            islamic_sciences: {
+                name: "باقة العلوم الشرعية",
+                names: ["فرسان التوحيد", "أبطال الفقه", "رواة الحديث", "حفظة التفسير", "نجوم السيرة", "دروع العقيدة"]
+            },
+            heroic_history: {
+                name: "باقة البطولات والقدوات",
+                names: ["فرسان بدر", "أبطال اليرموك", "ليوث القادسية", "قادة الفتح", "أصحاب الهمم", "فتيان الصدق"]
+            },
+            wisdom_light: {
+                name: "باقة النور والحكمة",
+                names: ["منارات الهدى", "مشاعل النور", "ينابيع الحكمة", "رواد الإحسان", "سفراء الخير", "أهل العزيمة"]
+            },
+            excellence_school: {
+                name: "باقة التميز والعفج",
+                names: ["نجباء العفج", "علماء المستقبل", "جيل القرآن", "صقور المجد", "رواد التفوق", "دروع المعرفة"]
+            }
+        };
+
+        const ALL_SUGGESTED_TEAM_NAMES = [
+            // العلوم الشرعية
+            "فرسان التوحيد", "أبطال الفقه", "رواة الحديث", "حفظة التفسير", "نجوم السيرة", "دروع العقيدة", "أئمة الهدى", "سفراء الدعوة",
+            // البطولات والقدوات
+            "فرسان بدر", "أبطال اليرموك", "ليوث القادسية", "قادة الفتح", "أصحاب الهمم", "فتيان الصدق", "صقور اليرموك", "أبطال حطين",
+            // النور والفضائل
+            "منارات الهدى", "مشاعل النور", "ينابيع الحكمة", "رواد الإحسان", "سفراء الخير", "أهل العزيمة", "نجوم الإيمان", "أصحاب الرسالة",
+            // التميز والمستقبل
+            "نجباء العفج", "علماء المستقبل", "جيل القرآن", "صقور المجد", "رواد التفوق", "دروع المعرفة", "شعلة الذكاء", "فرسان الضاد"
+        ];
+
+        let currentModalTeamCount = 4;
+        let activeFocusedTeamInputIndex = 0;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function updateLauncherTeamsBadge() {
+            const count = (appState.teams && appState.teams.length) ? appState.teams.length : 4;
+            const text = `${count} ${count === 2 ? 'فريقان' : 'فرق'}`;
+            const launcherBadge = document.getElementById('launcherTeamsCountBadge');
+            if (launcherBadge) launcherBadge.textContent = text;
+            const activeBadge = document.getElementById('teamsActiveCountBadge');
+            if (activeBadge) activeBadge.textContent = text;
+        }
+
+        function renderTeams() {
+            const container = document.getElementById('teamsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            appState.teams.forEach((t, idx) => {
+                const isTurn = (idx === appState.currentTurnTeamIndex);
+                const card = document.createElement('div');
+                card.className = `team-card ${isTurn ? 'active-turn' : ''}`;
+                card.innerHTML = `
+                    <div class="team-card-header">
+                        <div class="team-name" onclick="openTeamsConfigModalWithFocus(${idx})" style="cursor: pointer;" title="انقر لتعديل اسم الفريق أو إدارة الفرق">
+                            <i class="fa-solid fa-users" style="color: ${t.color};"></i>
+                            <span>${escapeHtml(t.name)}</span>
+                            <i class="fa-solid fa-pen" style="font-size: 11px; color: #94a3b8; margin-right: 5px;"></i>
+                        </div>
+                        <span class="team-turn-indicator">دوره للإجابة</span>
+                    </div>
+                    <div class="team-score-num">${t.score}</div>
+                    <div class="team-score-controls">
+                        <button class="btn-score-ctrl btn-score-add" onclick="addScore(${idx}, 10)">+10</button>
+                        <button class="btn-score-ctrl btn-score-add" onclick="addScore(${idx}, 5)">+5</button>
+                        <button class="btn-score-ctrl btn-score-sub" onclick="addScore(${idx}, -5)">-5</button>
+                        <button class="btn-score-ctrl" style="background: #f1f5f9; color: #475569;" onclick="setTurn(${idx})">الدور</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            updateLauncherTeamsBadge();
+        }
+
+        function addScore(teamIndex, delta) {
+            appState.teams[teamIndex].score += delta;
+            if (appState.teams[teamIndex].score < 0) appState.teams[teamIndex].score = 0;
+            saveTeamsToStorage();
+            renderTeams();
+            if (delta > 0) playSound('click');
+        }
+
+        function setTurn(teamIndex) {
+            appState.currentTurnTeamIndex = teamIndex;
+            renderTeams();
+            playSound('click');
+        }
+
+        function renameTeam(index) {
+            openTeamsConfigModalWithFocus(index);
+        }
+
+        function openTeamsConfigModal() {
+            currentModalTeamCount = (appState.teams && appState.teams.length) ? appState.teams.length : 4;
+            if (currentModalTeamCount < 2) currentModalTeamCount = 2;
+            if (currentModalTeamCount > 6) currentModalTeamCount = 6;
+            
+            renderTeamsCountButtons(currentModalTeamCount);
+            renderTeamsConfigRows(currentModalTeamCount);
+            renderSuggestedNamesChips();
+            setActiveTeamFocus(0);
+            
+            const checkbox = document.getElementById('teamsResetScoresCheckbox');
+            if (checkbox) checkbox.checked = false;
+
+            const modal = document.getElementById('teamsConfigModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                playSound('click');
+            }
+        }
+
+        function openTeamsConfigModalWithFocus(idx) {
+            openTeamsConfigModal();
+            if (typeof idx === 'number' && idx >= 0 && idx < currentModalTeamCount) {
+                setActiveTeamFocus(idx);
+                setTimeout(() => {
+                    const input = document.getElementById(`teamConfigInput_${idx}`);
+                    if (input) input.focus();
+                }, 100);
+            }
+        }
+
+        function closeTeamsConfigModal() {
+            const modal = document.getElementById('teamsConfigModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function setTeamsConfigCount(count) {
+            if (count < 2) count = 2;
+            if (count > 6) count = 6;
+            currentModalTeamCount = count;
+            renderTeamsCountButtons(count);
+            renderTeamsConfigRows(count);
+            if (activeFocusedTeamInputIndex >= count) {
+                setActiveTeamFocus(count - 1);
+            }
+            playSound('click');
+        }
+
+        function renderTeamsCountButtons(activeCount) {
+            const container = document.getElementById('teamsCountSelector');
+            if (!container) return;
+            const buttons = container.querySelectorAll('.btn-team-count');
+            buttons.forEach(btn => {
+                const count = parseInt(btn.getAttribute('data-count'), 10);
+                btn.classList.toggle('active', count === activeCount);
+            });
+        }
+
+        function renderTeamsConfigRows(count) {
+            const container = document.getElementById('teamsConfigRowsContainer');
+            if (!container) return;
+
+            // جمع الأسماء المكتوبة حالياً في الحقول قبل إعادة البناء
+            const existingValues = [];
+            const currentInputs = container.querySelectorAll('.team-config-input');
+            currentInputs.forEach(inp => existingValues.push(inp.value.trim()));
+
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const pal = DEFAULT_TEAM_PALETTE[i % DEFAULT_TEAM_PALETTE.length];
+                let initialName = existingValues[i];
+                if (!initialName) {
+                    if (appState.teams[i] && appState.teams[i].name) {
+                        initialName = appState.teams[i].name;
+                    } else {
+                        initialName = pal.defaultName;
+                    }
+                }
+
+                const row = document.createElement('div');
+                row.className = 'team-config-row';
+                row.innerHTML = `
+                    <div class="team-config-color-badge" style="background: ${pal.color};">
+                        ${i + 1}
+                    </div>
+                    <input type="text" class="team-config-input" id="teamConfigInput_${i}" 
+                           placeholder="اسم الفريق ${i + 1}"
+                           onfocus="setActiveTeamFocus(${i})" maxlength="35">
+                    <button type="button" class="btn-suggest-dice" onclick="randomizeSingleTeamName(${i})" title="اقتراح اسم عشوائي لهذا الفريق">
+                        <i class="fa-solid fa-dice" style="color: ${pal.color};"></i>
+                        <span>اقتراح</span>
+                    </button>
+                `;
+                container.appendChild(row);
+                const inputElem = row.querySelector('.team-config-input');
+                if (inputElem) inputElem.value = initialName;
+            }
+        }
+
+        function setActiveTeamFocus(idx) {
+            activeFocusedTeamInputIndex = idx;
+            const notice = document.getElementById('activeTeamInputNotice');
+            if (notice) {
+                notice.textContent = `الفريق المحدد للتسمية: الفريق ${idx + 1}`;
+            }
+        }
+
+        function renderSuggestedNamesChips() {
+            const container = document.getElementById('suggestedChipsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            ALL_SUGGESTED_TEAM_NAMES.forEach(name => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'suggested-name-chip';
+                chip.textContent = name;
+                chip.onclick = () => selectSuggestedNameForActiveTeam(name);
+                container.appendChild(chip);
+            });
+        }
+
+        function selectSuggestedNameForActiveTeam(name) {
+            const input = document.getElementById(`teamConfigInput_${activeFocusedTeamInputIndex}`);
+            if (input) {
+                input.value = name;
+                playSound('click');
+                // الانتقال التلقائي للفريق التالي لتسمية سريعة وسلسة
+                if (activeFocusedTeamInputIndex + 1 < currentModalTeamCount) {
+                    setActiveTeamFocus(activeFocusedTeamInputIndex + 1);
+                    const nextInput = document.getElementById(`teamConfigInput_${activeFocusedTeamInputIndex}`);
+                    if (nextInput) nextInput.focus();
+                }
+            }
+        }
+
+        function applyTeamThematicPreset(presetKey) {
+            const preset = TEAM_PRESET_PACKS[presetKey];
+            if (!preset) return;
+            const inputs = document.querySelectorAll('.team-config-input');
+            inputs.forEach((inp, idx) => {
+                if (preset.names[idx]) {
+                    inp.value = preset.names[idx];
+                }
+            });
+            playSound('click');
+            showNotificationToast(`تم تطبيق "${preset.name}" بنجاح! 🎯`);
+        }
+
+        function randomizeAllTeamsNames() {
+            const inputs = document.querySelectorAll('.team-config-input');
+            const shuffled = [...ALL_SUGGESTED_TEAM_NAMES].sort(() => 0.5 - Math.random());
+            inputs.forEach((inp, idx) => {
+                if (shuffled[idx]) {
+                    inp.value = shuffled[idx];
+                }
+            });
+            playSound('click');
+            showNotificationToast('تم اختيار أسماء عشوائية منوعة لجميع الفرق! 🎲');
+        }
+
+        function randomizeSingleTeamName(idx) {
+            const input = document.getElementById(`teamConfigInput_${idx}`);
+            if (!input) return;
+            const currentNames = Array.from(document.querySelectorAll('.team-config-input')).map(inp => inp.value.trim());
+            const available = ALL_SUGGESTED_TEAM_NAMES.filter(name => !currentNames.includes(name));
+            const pool = available.length > 0 ? available : ALL_SUGGESTED_TEAM_NAMES;
+            const randomName = pool[Math.floor(Math.random() * pool.length)];
+            input.value = randomName;
+            playSound('click');
+        }
+
+        function saveAndApplyTeamsConfig() {
+            const inputs = document.querySelectorAll('.team-config-input');
+            if (inputs.length === 0) return;
+
+            const resetScores = document.getElementById('teamsResetScoresCheckbox') ? document.getElementById('teamsResetScoresCheckbox').checked : false;
+
+            const newTeams = [];
+            inputs.forEach((inp, idx) => {
+                const pal = DEFAULT_TEAM_PALETTE[idx % DEFAULT_TEAM_PALETTE.length];
+                const trimmed = inp.value.trim() || pal.defaultName;
+                const existingScore = (appState.teams[idx] && !resetScores) ? appState.teams[idx].score : 0;
+                newTeams.push({
+                    id: idx + 1,
+                    name: trimmed,
+                    score: existingScore,
+                    color: pal.color
+                });
+            });
+
+            appState.teams = newTeams;
+            if (appState.currentTurnTeamIndex >= appState.teams.length) {
+                appState.currentTurnTeamIndex = 0;
+            }
+
+            saveTeamsToStorage();
+            renderTeams();
+            closeTeamsConfigModal();
+            playSound('fanfare');
+            showNotificationToast(`تم حفظ وتحديث ${appState.teams.length} فرق ومزامنتها بنجاح! 🏆`);
+        }
+
+        function resetTeamScores() {
+            if (confirm("هل تريد تصفير نقاط جميع الفرق لبدء جولة جديدة؟")) {
+                appState.teams.forEach(t => t.score = 0);
+                saveTeamsToStorage();
+                renderTeams();
+                playSound('click');
+            }
+        }
+
+        function celebrateWinningTeam() {
+            const sorted = [...appState.teams].sort((a, b) => b.score - a.score);
+            const winner = sorted[0];
+            playSound('fanfare');
+            
+            confetti({
+                particleCount: 180,
+                spread: 120,
+                origin: { y: 0.5 }
+            });
+
+            document.getElementById('victoryWinnerName').textContent = winner.name;
+            document.getElementById('victoryWinnerScore').textContent = winner.score;
+            document.getElementById('victoryModal').style.display = 'flex';
+        }
+
+        function closeVictoryModal() {
+            document.getElementById('victoryModal').style.display = 'none';
+        }
+
+        /* -------------------------------------------------------------------------
+           9. عجلة القرعة وتحدي الفرسان
+        ------------------------------------------------------------------------- */
+        let wheelRotation = 0;
+        let isSpinning = false;
+
+        function getActiveStudentsList() {
+            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            if (!activeClass || !activeClass.students || activeClass.students.length === 0) {
+                return ["طالب 1", "طالب 2", "طالب 3", "طالب 4", "طالب 5"];
+            }
+            const available = activeClass.students.filter(s => !s.picked).map(s => s.name);
+            return (available.length > 0) ? available : activeClass.students.map(s => s.name);
+        }
+
+        function openWheelModal() {
+            playSound('click');
+            const modal = document.getElementById('wheelModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+
+            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            let unpicked = [];
+            if (activeClass && activeClass.students && activeClass.students.length > 0) {
+                unpicked = activeClass.students.filter(s => !s.picked);
+                // إذا شارك جميع الطلاب في الجولة، نبدأ دورة جديدة تلقائياً
+                if (unpicked.length === 0) {
+                    activeClass.students.forEach(s => s.picked = false);
+                    saveClassesToStorage();
+                    renderStudentsView();
+                    unpicked = activeClass.students.slice();
+                }
+            }
+
+            drawWheel();
+
+            // إذا بقي طالب واحد فقط: لا يدور العجلة، بل يقع عليه الاختيار مباشرة
+            if (unpicked.length === 1) {
+                announcePickedStudent(unpicked[0].name, true);
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = true;
+                    spinBtn.innerHTML = '<i class="fa-solid fa-crown" style="color: #fbbf24;"></i> وقع الاختيار على الطالب الأخير تلقائياً';
+                }
+                const reSpinBtn = document.getElementById('reSpinBtn');
+                if (reSpinBtn) reSpinBtn.style.display = 'none';
+                const wheelSubtitle = document.getElementById('wheelSubtitle');
+                if (wheelSubtitle) {
+                    wheelSubtitle.innerHTML = '<span style="color: #047857; font-weight: 800;"><i class="fa-solid fa-wand-magic-sparkles"></i> بقي طالب واحد فقط، وقع عليه الاختيار مباشرة دون دوران العجلة!</span>';
+                }
+            } else {
+                // حالة طبيعية (أكثر من طالب متبقي)
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = false;
+                    spinBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> تدوير عجلة الحظ';
+                }
+                const reSpinBtn = document.getElementById('reSpinBtn');
+                if (reSpinBtn) reSpinBtn.style.display = 'inline-flex';
+                const wheelSubtitle = document.getElementById('wheelSubtitle');
+                if (wheelSubtitle) {
+                    const count = unpicked.length;
+                    wheelSubtitle.textContent = count > 0 ? `سحب عشوائي بين ${count} من الفرسان المتبقين في الفصل` : 'سحب عشوائي لاختيار طالب للإجابة عن السؤال';
+                }
+                document.getElementById('pickedStudentBox').style.display = 'none';
+            }
+        }
+
+        function closeWheelModal() {
+            document.getElementById('wheelModal').style.display = 'none';
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const students = getActiveStudentsList();
+            const numSlices = students.length;
+            const radius = canvas.width / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const colors = ['#047857', '#0284c7', '#d97706', '#7c3aed', '#dc2626', '#059669', '#2563eb', '#ea580c'];
+
+            if (numSlices === 1) {
+                // رسم دائرة واحدة أنيقة ومميزة للطالب الأخير
+                ctx.beginPath();
+                ctx.fillStyle = '#047857';
+                ctx.arc(radius, radius, radius - 4, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 18px Cairo, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(students[0], radius, radius - 15);
+                ctx.font = "bold 13px Cairo, sans-serif";
+                ctx.fillStyle = "#fef08a";
+                ctx.fillText("⭐ الفارس الأخير المتبقي ⭐", radius, radius + 15);
+                ctx.restore();
+                return;
+            }
+
+            const arc = (2 * Math.PI) / numSlices;
+
+            for (let i = 0; i < numSlices; i++) {
+                const angle = wheelRotation + i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius - 4, angle, angle + arc);
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 13px Cairo, sans-serif";
+                ctx.translate(radius, radius);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                let name = students[i];
+                if (name.length > 14) name = name.substring(0, 13) + '..';
+                ctx.fillText(name, radius - 20, 5);
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+
+            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            let unpicked = [];
+            if (activeClass && activeClass.students && activeClass.students.length > 0) {
+                unpicked = activeClass.students.filter(s => !s.picked);
+                if (unpicked.length === 0) {
+                    activeClass.students.forEach(s => s.picked = false);
+                    saveClassesToStorage();
+                    renderStudentsView();
+                    unpicked = activeClass.students.slice();
+                }
+            }
+
+            // إذا بقي طالب واحد فقط، لا يدور العجلة بل يختاره مباشرة
+            if (unpicked.length === 1) {
+                announcePickedStudent(unpicked[0].name, true);
+                const spinBtn = document.getElementById('spinBtn');
+                if (spinBtn) {
+                    spinBtn.disabled = true;
+                    spinBtn.innerHTML = '<i class="fa-solid fa-crown" style="color: #fbbf24;"></i> وقع الاختيار على الطالب الأخير تلقائياً';
+                }
+                const reSpinBtn = document.getElementById('reSpinBtn');
+                if (reSpinBtn) reSpinBtn.style.display = 'none';
+                return;
+            }
+
+            const students = getActiveStudentsList();
+            if (students.length === 1) {
+                announcePickedStudent(students[0], true);
+                return;
+            }
+
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+            document.getElementById('pickedStudentBox').style.display = 'none';
+
+            const numSlices = students.length;
+            const arc = (2 * Math.PI) / numSlices;
+
+            const extraRounds = 5 + Math.random() * 3;
+            const randomAngle = Math.random() * 2 * Math.PI;
+            const totalRotation = extraRounds * 2 * Math.PI + randomAngle;
+
+            const duration = 4000;
+            const startTime = performance.now();
+            const startRotation = wheelRotation;
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                wheelRotation = startRotation + totalRotation * easeOut;
+                
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    document.getElementById('spinBtn').disabled = false;
+                    
+                    const normalizedRotation = (wheelRotation % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                    const pointerAngle = (1.5 * Math.PI - normalizedRotation + 2 * Math.PI) % (2 * Math.PI);
+                    const pickedIndex = Math.floor(pointerAngle / arc) % numSlices;
+                    const winningName = students[pickedIndex];
+
+                    announcePickedStudent(winningName, false);
+                }
+            }
+
+            requestAnimationFrame(animate);
         }
 
         function announcePickedStudent(name, isLast = false) {
