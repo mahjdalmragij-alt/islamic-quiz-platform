@@ -22,7 +22,7 @@
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="voice_assets.js?v=20261103_v1"></script>
-    <script src="student_voices.js?v=20261106_v15_real_school_students"></script>
+    <script src="student_voices.js?v=20261106_v16_strict_grade_classes"></script>
     <script src="questions_bank.js?v=20261106_v10_browser_tts_names"></script>
     <script src="questions_bank_g2.js?v=20261106_v10_browser_tts_names"></script>
     <script src="questions_bank_g3.js?v=20261106_v10_browser_tts_names"></script>
@@ -4839,6 +4839,12 @@
             playSound('click');
             appState.currentGrade = grade;
 
+            // مزامنة وتحديد الفصل المناسب للمرحلة فوراً لمنع تداخل الصفوف
+            const targetClass = appState.classes.find(c => (c.grade || 1) === grade);
+            if (targetClass) {
+                appState.activeClassId = targetClass.id;
+            }
+
             // تحديث حالة أزرار التبديل
             const btn1 = document.getElementById('gradeToggleBtn1');
             const btn2 = document.getElementById('gradeToggleBtn2');
@@ -6585,10 +6591,26 @@
         let wheelRotation = 0;
         let isSpinning = false;
 
+        function getActiveCurrentClass() {
+            const curGrade = appState.currentGrade || 1;
+            // 1. فحص الفصل النشط ومطابقته للمرحلة الدراسية
+            let targetClass = appState.classes.find(c => c.id === appState.activeClassId && (c.grade || 1) === curGrade);
+            if (targetClass) return targetClass;
+
+            // 2. إذا لم يتطابق، نعين فوراً الفصل الخاص بالمرحلة المحددة
+            targetClass = appState.classes.find(c => (c.grade || 1) === curGrade);
+            if (targetClass) {
+                appState.activeClassId = targetClass.id;
+                return targetClass;
+            }
+
+            return appState.classes[0] || null;
+        }
+
         function getActiveStudentsList() {
-            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            const activeClass = getActiveCurrentClass();
             if (!activeClass || !activeClass.students || activeClass.students.length === 0) {
-                return ["طالب 1", "طالب 2", "طالب 3", "طالب 4", "طالب 5"];
+                return [];
             }
             const available = activeClass.students.filter(s => !s.picked).map(s => s.name);
             return (available.length > 0) ? available : activeClass.students.map(s => s.name);
@@ -6600,17 +6622,23 @@
             if (!modal) return;
             modal.style.display = 'flex';
 
-            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            const activeClass = getActiveCurrentClass();
             let unpicked = [];
             if (activeClass && activeClass.students && activeClass.students.length > 0) {
                 unpicked = activeClass.students.filter(s => !s.picked);
-                // إذا شارك جميع الطلاب في الجولة، نبدأ دورة جديدة تلقائياً
+                // إذا شارك جميع طلاب الفصل في الجولة، نبدأ دورة جديدة تلقائياً
                 if (unpicked.length === 0) {
                     activeClass.students.forEach(s => s.picked = false);
                     saveClassesToStorage();
                     renderStudentsView();
                     unpicked = activeClass.students.slice();
                 }
+            }
+
+            // تحديث نص العنوان التوضيحي للقرعة ليوضح اسم الفصل بدقة
+            const subTitle = document.getElementById('wheelSubtitle');
+            if (subTitle && activeClass) {
+                subTitle.innerHTML = `<i class="fa-solid fa-graduation-cap" style="color: #047857;"></i> قرعة <b>${activeClass.name}</b> (متبقي ${unpicked.length} من ${activeClass.students.length} طالباً)`;
             }
 
             drawWheel();
@@ -6715,7 +6743,7 @@
         function spinWheel() {
             if (isSpinning) return;
 
-            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            const activeClass = getActiveCurrentClass();
             let unpicked = [];
             if (activeClass && activeClass.students && activeClass.students.length > 0) {
                 unpicked = activeClass.students.filter(s => !s.picked);
@@ -6838,7 +6866,7 @@
                 closeWheelModal();
             }, 4500);
 
-            const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
+            const activeClass = getActiveCurrentClass();
             if (activeClass && activeClass.students) {
                 const st = activeClass.students.find(s => s.name === name);
                 if (st) {
@@ -6987,7 +7015,6 @@
             const selectLauncher = document.getElementById('launcherClassSelect');
             if (!selectLauncher) return;
 
-            const currentVal = parseInt(selectLauncher.value) || 0;
             selectLauncher.innerHTML = '';
             const launcherGrade = appState.currentGrade || 1;
             let gradeClasses = appState.classes.filter(c => (c.grade || 1) === launcherGrade);
@@ -7006,10 +7033,11 @@
                 selectLauncher.appendChild(opt);
             });
 
-            // تعيين اختيار شاشة البداية دون لمس appState.activeClassId الخاص بتبويب الطلاب
-            const matchClass = gradeClasses.find(c => c.id === currentVal) || gradeClasses[0];
+            // تعيين الفصل النشط بدقة تامة ليتطابق مع المرحلة المختارة فقط
+            const matchClass = gradeClasses.find(c => c.id === appState.activeClassId) || gradeClasses[0];
             if (matchClass) {
                 selectLauncher.value = matchClass.id;
+                appState.activeClassId = matchClass.id;
             }
         }
 
