@@ -22,9 +22,9 @@
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="voice_assets.js?v=20261103_v1"></script>
-    <script src="questions_bank.js?v=20261106_v9_wheel_tension"></script>
-    <script src="questions_bank_g2.js?v=20261106_v9_wheel_tension"></script>
-    <script src="questions_bank_g3.js?v=20261106_v9_wheel_tension"></script>
+    <script src="questions_bank.js?v=20261106_v10_browser_tts_names"></script>
+    <script src="questions_bank_g2.js?v=20261106_v10_browser_tts_names"></script>
+    <script src="questions_bank_g3.js?v=20261106_v10_browser_tts_names"></script>
 
     <!-- Google Firebase Realtime Database SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -5480,27 +5480,105 @@
                 let currentTensionAudio = null;
         let currentAnnouncerAudio = null;
         let wheelAutoCloseTimer = null;
+        let speechVoicesList = [];
+        window.currentStudentUtterance = null;
 
-        function speakStudentName(name) {
-            if (!name) return;
+        function initSpeechVoices() {
             if ('speechSynthesis' in window) {
-                try {
-                    window.speechSynthesis.cancel();
-                    const cleanName = name.trim();
-                    const text = `فَارِسُنَا المُشَارِكُ: ${cleanName}`;
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'ar-SA';
-                    utterance.rate = 0.90;
-                    utterance.pitch = 1.05;
-
-                    const voices = window.speechSynthesis.getVoices();
-                    const arVoice = voices.find(v => (v.lang && v.lang.startsWith('ar')) || (v.name && (v.name.includes('Arabic') || v.name.includes('Hamed') || v.name.includes('Maged') || v.name.includes('Naayf') || v.name.includes('Tarik'))));
-                    if (arVoice) utterance.voice = arVoice;
-
-                    window.speechSynthesis.speak(utterance);
-                } catch(e) {
-                    console.warn('Speech error:', e);
+                speechVoicesList = window.speechSynthesis.getVoices();
+                if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        speechVoicesList = window.speechSynthesis.getVoices();
+                    };
                 }
+            }
+        }
+        initSpeechVoices();
+
+        function getBestArabicSpeechVoice() {
+            const list = (speechVoicesList && speechVoicesList.length > 0)
+                ? speechVoicesList
+                : ('speechSynthesis' in window ? window.speechSynthesis.getVoices() : []);
+            if (!list || list.length === 0) return null;
+
+            // 1. أفضل الأصوات العربية الطبيعية عالية الجودة (Natural / Neural / Online)
+            const naturalVoice = list.find(v => (v.lang && (v.lang.startsWith('ar') || v.lang.includes('ar'))) && (
+                v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Hamed') ||
+                v.name.includes('Naayf') || v.name.includes('Salma') || v.name.includes('Shakir') ||
+                v.name.includes('Zariyah') || v.name.includes('Online') || v.name.includes('Saudi') ||
+                v.name.includes('Google') || v.name.includes('Maged') || v.name.includes('Tarik')
+            ));
+            if (naturalVoice) return naturalVoice;
+
+            // 2. أي صوت عربي متاح في المتصفح أو النظام
+            const anyArVoice = list.find(v => (v.lang && (v.lang.startsWith('ar') || v.lang.includes('ar'))) ||
+                                              (v.name && v.name.toLowerCase().includes('arabic')));
+            if (anyArVoice) return anyArVoice;
+
+            return null;
+        }
+
+        function speakStudentName(name, onDoneCallback) {
+            if (!name) {
+                if (onDoneCallback) onDoneCallback();
+                return;
+            }
+            if (!('speechSynthesis' in window)) {
+                if (onDoneCallback) onDoneCallback();
+                return;
+            }
+
+            try {
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+                window.speechSynthesis.cancel();
+
+                const cleanName = name.trim();
+                const text = `فَارِسُنَا المُخْتَارُ: ${cleanName}`;
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.lang = 'ar-SA';
+                utter.rate = 0.85; // وتيرة هادئة واضحة وممتازة للنطق العربي
+                utter.pitch = 1.0;
+
+                const arVoice = getBestArabicSpeechVoice();
+                if (arVoice) {
+                    utter.voice = arVoice;
+                }
+
+                // حفظ الكائن في متغير عام لمنع محرك المتصفح من حذفه من الذاكرة أثناء النطق (GC Bug)
+                window.currentStudentUtterance = utter;
+
+                let called = false;
+                const finish = () => {
+                    if (called) return;
+                    called = true;
+                    window.currentStudentUtterance = null;
+                    if (onDoneCallback) onDoneCallback();
+                };
+
+                utter.onend = finish;
+                utter.onerror = (e) => {
+                    console.warn('SpeechSynthesis error:', e);
+                    finish();
+                };
+
+                // استدعاء بعد تأخير 100ms لتفادي إسقاط الطلب بعد cancel في متصفحات كروم
+                setTimeout(() => {
+                    try {
+                        window.speechSynthesis.speak(utter);
+                    } catch(err) {
+                        console.warn('Speak error:', err);
+                        finish();
+                    }
+                }, 100);
+
+                // أمان: إن لم ينتهِ النطق خلال 4.5 ثوانٍ ينفذ callback
+                setTimeout(finish, 4500);
+
+            } catch (e) {
+                console.warn('General speech error:', e);
+                if (onDoneCallback) onDoneCallback();
             }
         }
 
@@ -6665,14 +6743,22 @@
             const pNameEl = document.getElementById('activePickedStudentNameDisplay');
             if (pNameEl) pNameEl.textContent = name;
 
-            // نطق اسم الطالب المختار بصوت فصيح
-            speakStudentName(name);
-
-            // إغلاق مربع القرعة تلقائياً بعد 2.8 ثانية ليظهر اسم الطالب مباشرة في ساحة السؤال
             if (wheelAutoCloseTimer) clearTimeout(wheelAutoCloseTimer);
+
+            // تأخير بدء نطق القارئ 500 ملي ثانية حتى ينتهي رنين مؤثر الفوز ويقرأ القارئ بوضوح
+            setTimeout(() => {
+                speakStudentName(name, () => {
+                    // بعد انتهاء القارئ من قراءة الاسم، ننتظر ثانية واحدة ثم نقفل نافذة القرعة تلقائياً
+                    wheelAutoCloseTimer = setTimeout(() => {
+                        closeWheelModal();
+                    }, 1000);
+                });
+            }, 500);
+
+            // مؤقت احتياطي لضمان إغلاق نافذة القرعة
             wheelAutoCloseTimer = setTimeout(() => {
                 closeWheelModal();
-            }, 2800);
+            }, 4500);
 
             const activeClass = appState.classes.find(c => c.id === appState.activeClassId);
             if (activeClass && activeClass.students) {
@@ -6747,7 +6833,7 @@
 
             // تنظيف وإلغاء تخزين النسخ القديمة غير المشكولة
             try {
-                localStorage.removeItem('islamic_quiz_questions_master_1448_v9_wheel_tension');
+                localStorage.removeItem('islamic_quiz_questions_master_1448_v10_browser_tts_names');
                 localStorage.removeItem('islamic_quiz_questions_master_1448_v5');
                 localStorage.removeItem('islamic_quiz_questions_master_1448_v4');
                 localStorage.removeItem('islamic_quiz_questions_master_1448_v3');
@@ -6785,7 +6871,7 @@
         }
 
         function saveQuestionsToStorage() {
-            localStorage.setItem('islamic_quiz_questions_master_1448_v9_wheel_tension', JSON.stringify(appState.questions));
+            localStorage.setItem('islamic_quiz_questions_master_1448_v10_browser_tts_names', JSON.stringify(appState.questions));
             updateTotalCounter();
         }
 
