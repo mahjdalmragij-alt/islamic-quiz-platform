@@ -22,7 +22,7 @@
     <!-- Canvas Confetti & Questions Bank -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="voice_assets.js?v=20261103_v1"></script>
-    <script src="student_voices.js?v=20261106_v13_name_first_hamed"></script>
+    <script src="student_voices.js?v=20261106_v14_pure_studio_only"></script>
     <script src="questions_bank.js?v=20261106_v10_browser_tts_names"></script>
     <script src="questions_bank_g2.js?v=20261106_v10_browser_tts_names"></script>
     <script src="questions_bank_g3.js?v=20261106_v10_browser_tts_names"></script>
@@ -5498,12 +5498,6 @@
                 currentStudentAudio = null;
             }
 
-            if ('speechSynthesis' in window) {
-                try {
-                    window.speechSynthesis.cancel();
-                } catch(e) {}
-            }
-
             let called = false;
             const finish = () => {
                 if (called) return;
@@ -5515,67 +5509,46 @@
             const cleanName = name.trim();
             let audioSrc = null;
 
-            // 1. فحص التسجيل الأستوديو عالي النقاء بصوت القارئ حامد المعتمد للأسئلة
+            // استرجاع التسجيل الأستوديو الفصيح بصوت القارئ حامد المعتمد
             if (typeof getStudentStudioAudio === 'function') {
                 audioSrc = getStudentStudioAudio(cleanName);
             } else if (typeof STUDENT_STUDIO_VOICES !== 'undefined' && STUDENT_STUDIO_VOICES[cleanName]) {
                 audioSrc = STUDENT_STUDIO_VOICES[cleanName];
             }
 
-            if (audioSrc) {
-                try {
-                    currentStudentAudio = new Audio(audioSrc);
-                    currentStudentAudio.onended = finish;
-                    currentStudentAudio.onerror = (e) => {
-                        console.warn('Student studio audio play error, trying speech synthesis fallback:', e);
-                        speakStudentNameWithBrowserTTS(cleanName, finish);
-                    };
+            if (!audioSrc) {
+                audioSrc = 'audio/students/default_champion.mp3';
+            }
 
-                    const playPromise = currentStudentAudio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(err => {
-                            console.warn('Student audio auto-play warning, fallback to TTS:', err);
-                            speakStudentNameWithBrowserTTS(cleanName, finish);
-                        });
-                    }
-                } catch(err) {
-                    console.warn('speakStudentName exception, fallback to TTS:', err);
-                    speakStudentNameWithBrowserTTS(cleanName, finish);
+            try {
+                let audioEl = document.getElementById('studentStudioAudioPlayer');
+                if (!audioEl) {
+                    audioEl = document.createElement('audio');
+                    audioEl.id = 'studentStudioAudioPlayer';
+                    document.body.appendChild(audioEl);
                 }
-            } else {
-                // 2. إذا كان اسماً جديداً أضافه المعلم ولم يُسجل مسبقاً في الأستوديو: يُنطق مباشرة بصوت حامد أو القارئ العربي الفصيح
-                speakStudentNameWithBrowserTTS(cleanName, finish);
+                audioEl.src = audioSrc;
+                audioEl.onended = finish;
+                audioEl.onerror = (e) => {
+                    console.warn('Student studio audio error:', e);
+                    finish();
+                };
+                currentStudentAudio = audioEl;
+
+                const p = audioEl.play();
+                if (p !== undefined) {
+                    p.catch(err => {
+                        console.warn('Student studio audio play prevented:', err);
+                        finish();
+                    });
+                }
+            } catch(err) {
+                console.warn('speakStudentName exception:', err);
+                finish();
             }
 
             // صمام أمان لإنهاء الكول باك تلقائياً إذا تأخر التشغيل
             setTimeout(finish, 4500);
-        }
-
-        function speakStudentNameWithBrowserTTS(name, onDone) {
-            if (!('speechSynthesis' in window)) {
-                if (onDone) onDone();
-                return;
-            }
-            try {
-                window.speechSynthesis.cancel();
-                const utter = new SpeechSynthesisUtterance(`${name}! فَارِسُنَا: ${name}!`);
-                utter.lang = 'ar-SA';
-                utter.rate = 0.88;
-                utter.pitch = 1.0;
-
-                const voices = window.speechSynthesis.getVoices();
-                const hamedVoice = voices.find(v => v.name && (v.name.includes('Hamed') || v.name.includes('حامد') || v.name.includes('Saudi')));
-                const anyArVoice = voices.find(v => (v.lang && v.lang.startsWith('ar')) || (v.name && v.name.includes('Arabic')));
-                if (hamedVoice) utter.voice = hamedVoice;
-                else if (anyArVoice) utter.voice = anyArVoice;
-
-                utter.onend = () => { if (onDone) onDone(); };
-                utter.onerror = () => { if (onDone) onDone(); };
-                window.speechSynthesis.speak(utter);
-            } catch(e) {
-                console.warn('TTS error:', e);
-                if (onDone) onDone();
-            }
         }
 
         function playMillionaireAnnouncer(level) {
