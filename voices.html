@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استوديو مقارنة أصوات القراء - منصة المسابقات الإسلامية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1b4332;
+            --primary-light: #2d6a4f;
+            --accent: #d4af37;
+            --accent-glow: rgba(212, 175, 55, 0.3);
+            --bg: #0d1b1e;
+            --card-bg: #152528;
+            --card-border: #233d42;
+            --text: #f0f4f5;
+            --text-muted: #95a5a6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            max-width: 700px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: var(--accent);
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .notice-box {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 12px 18px;
+            max-width: 700px;
+            width: 100%;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #ffeaa7;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 850px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .voice-card {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .voice-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px var(--accent-glow);
+        }
+
+        .voice-card.recommended {
+            border-color: var(--accent);
+            background: linear-gradient(145deg, #182c30, #132427);
+        }
+
+        .badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--accent);
+            color: #000;
+            font-weight: 800;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .voice-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .voice-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            line-height: 1.4;
+        }
+
+        .sample-item {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .sample-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sample-text {
+            font-size: 0.78rem;
+            color: #bdc3c7;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        audio {
+            width: 100%;
+            height: 36px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 24px;
+            background: var(--primary);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+
+        .btn-back:hover {
+            background: var(--primary-light);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🎙️ استوديو نماذج أصوات القراء</h1>
+        <p>استمع مباشرة إلى نماذج القراءة للمقارنة وتحديد الصوت الأنسب والأفصح للمنصة</p>
+    </div>
+
+    <div class="notice-box">
+        <strong>💡 ملاحظة هامة:</strong> يتضمن كل نموذج تجربة نطق <strong>«لا إله إلا الله»</strong>، وسؤالاً فقهياً كاملاً، بالإضافة إلى نموذج <strong>الدمج المباشر مع تلاوة الشيخ عبد الرحمن السديس</strong> للآيات الكريمة بعد «قال تعالى:».
+    </div>
+
+    
+    <div style="background: #1b4332; border: 2px solid #2ecc71; border-radius: 16px; padding: 18px; max-width: 850px; width: 100%; margin-bottom: 25px; text-align: center;">
+        <h3 style="color: #2ecc71; margin-bottom: 8px;">🔊 استماع مباشر لسؤال الأذان المصحح (g1_fiq_35)</h3>
+        <p style="color: #ecf0f1; font-size: 0.9rem; margin-bottom: 12px;">قراءة موحدة وطبيعية ومتصلة دون أي تقطيع نشاز:</p>
+        <audio controls preload="auto" style="width: 100%; max-width: 500px;">
+            <source src="audio/g1_fiq_35.mp3?v=2" type="audio/mpeg">
+        </audio>
+    </div>
+<div class="grid">
+        <!-- خيار التسجيل البشري 100% -->
+        <div class="voice-card" style="border-color: #2ecc71; background: linear-gradient(145deg, #103426, #0b2219); grid-column: 1 / -1;">
+            <span class="badge" style="background: #2ecc71; color: #000;">تسجيل بشري حقيقي 100% ✨</span>
+            <div class="voice-title" style="color: #2ecc71;">🎙️ تلاوة الشيخ عبد الرحمن السديس (تسجيل أستوديو بشري)</div>
+            <div class="voice-desc" style="color: #e0f2e9;">تسجيل صوتي بشري ناصع بأحكام التجويد والمد الأصلي وإظهار لفظ الجلالة؛ لتجاوز المحركات الآلية كلياً في الآيات والأذكار.</div>
+
+            <div class="sample-item" style="background: rgba(0,0,0,0.4);">
+                <div class="sample-label" style="color: #2ecc71;">🟢 عينة نطق «لَا إِلَٰهَ إِلَّا اللَّهُ» بصوت الشيخ السديس البشري:</div>
+                <div class="sample-text">مقتطعة من تسجيل الأستوديو الأصلي بالتجويد والمد الكاملين.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/sudais_tahlil_clean.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+
+
+        <!-- النموذج 1: القارئ شاكر (الموصى به) -->
+        <div class="voice-card recommended">
+            <span class="badge">الأكثر فصاحة ✨</span>
+            <div class="voice-title">1. القارئ شاكر (Shakir)</div>
+            <div class="voice-desc">صوت إذاعي فصيح، جهوري، مخارج حروفه ناصعة، متقن جداً للغة العربية الفصحى دون أي لكنة.</div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 تجربة نطق «لا إله إلا الله»:</div>
+                <div class="sample-text">«لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ...»</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/shakir_tahlil.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 سؤال كامل مع الخيارات:</div>
+                <div class="sample-text">سؤال معنى كلمة التوحيد مع قراءة الخيارات الأربعة كاملة.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/shakir_question.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 دمج القارئ مع تلاوة الشيخ السديس:</div>
+                <div class="sample-text">«قال تعالى:» بصوت شاكر ⬅️ تلاوة الآية بصوت الشيخ السديس ⬅️ إكمال السؤال.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/shakir_sudais_spliced.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+
+        <!-- النموذج 2: القارئ حمدان -->
+        <div class="voice-card">
+            <div class="voice-title">2. القارئ حمدان (Hamdan)</div>
+            <div class="voice-desc">نبرة خليجية وقورة وهادئة، تناسب التلاوات الهادئة والقراءة التأملية.</div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 تجربة نطق «لا إله إلا الله»:</div>
+                <div class="sample-text">«لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ...»</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/hamdan_tahlil.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 سؤال كامل مع الخيارات:</div>
+                <div class="sample-text">سؤال معنى كلمة التوحيد مع قراءة الخيارات كاملة.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/hamdan_question.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 دمج القارئ مع تلاوة الشيخ السديس:</div>
+                <div class="sample-text">«قال تعالى:» بصوت حمدان ⬅️ تلاوة الشيخ السديس ⬅️ إكمال السؤال.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/hamdan_sudais_spliced.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+
+        <!-- النموذج 3: محرك جوجل الصوتي -->
+        <div class="voice-card">
+            <div class="voice-title">3. محرك جوجل الصوتي (Google Speech)</div>
+            <div class="voice-desc">محرك نطق جوجل للغة العربية (Google TTS Cloud Engine).</div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 تجربة نطق «لا إله إلا الله»:</div>
+                <div class="sample-text">«لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ...»</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/google_tahlil.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 سؤال كامل مع الخيارات:</div>
+                <div class="sample-text">سؤال معنى كلمة التوحيد مع قراءة الخيارات كاملة.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/google_question.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 دمج محرك جوجل مع تلاوة الشيخ السديس:</div>
+                <div class="sample-text">«قال تعالى:» بنطق جوجل ⬅️ تلاوة الشيخ السديس ⬅️ إكمال السؤال.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/google_sudais_spliced.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+
+        <!-- النموذج 4: القارئ فهد -->
+        <div class="voice-card">
+            <div class="voice-title">4. القارئ فهد (Fahed)</div>
+            <div class="voice-desc">صوت خليجي فصيح، بنبرة متزنة وسرعة معتدلة تناسب الطلاب.</div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 تجربة نطق «لا إله إلا الله»:</div>
+                <div class="sample-text">«لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ...»</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/fahed_tahlil.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 سؤال كامل مع الخيارات:</div>
+                <div class="sample-text">سؤال معنى كلمة التوحيد مع قراءة الخيارات كاملة.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/fahed_question.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <div class="sample-item">
+                <div class="sample-label">🔹 دمج القارئ مع تلاوة الشيخ السديس:</div>
+                <div class="sample-text">«قال تعالى:» بصوت فهد ⬅️ تلاوة الشيخ السديس ⬅️ إكمال السؤال.</div>
+                <audio controls preload="none">
+                    <source src="audio/samples/fahed_sudais_spliced.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <a href="index.html" class="btn-back">⬅️ العودة إلى منصة المسابقات</a>
+        <p style="margin-top: 15px;">تصميم: محمد آل حسين | لصالح متوسطة العفج</p>
+    </div>
+
+</body>
+</html>
